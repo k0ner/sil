@@ -1,0 +1,4 @@
+*.class
+*.pyc
+*.pyo
+src/interpreter_Parser_parsetab.py
