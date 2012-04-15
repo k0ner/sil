@@ -8,8 +8,6 @@ class Evaluator():
         self.toReturn = False
     
     def visit(self, ast):
-        if ast.type == "string":
-            return ast.value
         if ast.type == "selection":
             print ast.type
             return self.visit_Select(ast)

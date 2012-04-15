@@ -97,16 +97,16 @@ class Parser(Interpreter, Lexer):
         p[0] = While(p[2], p[4])
         
     def p_def(self, p):
-        """expression : DEF NAME LPAREN args RPAREN COLON block"""
+        """expression : DEF NAME LPAREN function_args RPAREN COLON block"""
         p[0] = FuncDef(p[2], p[4], p[7])
     
     def p_print(self, p):
-        """expression : PRINT args"""
+        """expression : PRINT fun_args"""
         p[0] = Print(p[2])
     
-    def p_args(self, p):
-        """args : expression
-                | expression COMA args"""
+    def p_function_args(self, p):
+        """function_args : NAME
+                | NAME COMA function_args"""
         if len(p) == 2:
             p[0] = Args(p[1])
         else:
