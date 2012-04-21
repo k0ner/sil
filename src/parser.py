@@ -16,9 +16,10 @@ class Parser(Interpreter, Lexer):
     
     def p_statement(self,p):
         """statement : expression
-                     | relexpr
-                     | block
-                     | import"""
+                     | comparision
+                     | assign_stmt
+                     | import
+                     | compound_stmt"""
         p[0] = p[1]
         
     def p_import(self, p):
@@ -27,7 +28,7 @@ class Parser(Interpreter, Lexer):
         f = open(p[2], 'r')
         file = f.read()
         print file
-        p[0] = Block(yacc.parse(file))
+        p[0] = Block([yacc.parse(file)])
     
     def p_expression_binop(self, p):
         '''expression : expression PLUS expression
@@ -36,28 +37,23 @@ class Parser(Interpreter, Lexer):
                       | expression DIVIDE expression'''
         p[0] = BinaryOp(p[2], p[1], p[3])
 
-    def p_statement_assign(self, p):
-        """expression : NAME ASSIGN assignment"""
+    def p_assign_stmt(self, p):
+        """assign_stmt : NAME ASSIGN assignment"""
         p[0] = Assign(p[1], p[3])
         
     def p_assignment(self, p):
         """assignment : expression
-                      | relexpr"""
+                      | comparision
+                      | func_call_stmt"""
         p[0] = p[1]
 
     def p_relexpr(self, p):
-        """relexpr : expression EQ expression
-                    | expression NE expression
-                    | expression GT expression
-                    | expression LT expression
-                    | expression GE expression
-                    | expression LE expression"""
-        #=======================================================================
-        #            | expression"""
-        # if len(p) == 2:
-        #    p[0] = Boolean(p[1])
-        # else:
-        #=======================================================================
+        """comparision : expression EQ expression
+                       | expression NE expression
+                       | expression GT expression
+                       | expression LT expression
+                       | expression GE expression
+                       | expression LE expression"""
         p[0] = RelExpr(p[2], p[1], p[3])
 
     def p_expression_group(self, p):
@@ -69,77 +65,106 @@ class Parser(Interpreter, Lexer):
         p[0] = UnaryOp(p[1], p[2])
         
     def p_expression_integer(self, p):
-        'expression : INTEGER'
+        'expression : INTEGER_TYPE'
         p[0] = Integer(p[1])
         
     def p_expression_float(self, p):
-        'expression : FLOAT'
+        'expression : FLOAT_TYPE'
         p[0] = Float(p[1])
         
     def p_expression_string(self, p):
-        'expression : STRING'
+        'expression : STRING_TYPE'
         p[0] = String(p[1])
         
     def p_expression_boolean(self, p):
-        'expression : BOOLEAN'
+        'expression : BOOLEAN_TYPE'
         p[0] = Boolean(p[1])
         
-    def p_statement_if(self, p):
-        """expression : IF test THEN block
-                      | IF test THEN block ELSE block"""
+    def p_if_stmt(self, p):
+        """if_stmt : IF test THEN suite
+                   | IF test THEN suite ELSE suite"""
         if len(p) == 5:
             p[0] = IfThenElse(p[2], p[4], None)
         else:
             p[0] = IfThenElse(p[2], p[4], p[6])
         
-    def p_statement_while(self, p):
-        """expression : WHILE test DO block"""
-        p[0] = While(p[2], p[4])
-        
-    def p_def(self, p):
-        """expression : DEF NAME LPAREN function_args RPAREN COLON block"""
-        p[0] = FuncDef(p[2], p[4], p[7])
+    def p_suite(self, p):
+        """suite : simple_stmt
+                 | BEGIN stmts END"""
+        if len(p) == 2:
+            p[0] = Block([p[1]])
+        else:
+            p[0] = Block(p[2])
+            
+    #should refers all statements but used in a single line
+    def p_simple_stmt(self, p):
+        #currently only for test issues
+        """simple_stmt : compound_stmt"""
+        p[0] = p[1]
+            
+    def p_stmts(self, p):
+        """stmts : stmt
+                 | stmt SEMICOLON stmts"""
+        if len(p) == 2:
+            p[0] = [p[1]]
+        else:
+            p[0] = p[1] + p[3]
+            
+    def p_stmt(self, p):
+        #for test too
+        """stmt : compound_stmt"""
+        p[0] = p[1]
     
-    def p_print(self, p):
-        """expression : PRINT fun_args"""
+    def p_compound_stmt(self, p):
+        """compound_stmt : if_stmt
+                         | while_stmt
+                         | func_def_stmt
+                         | print_stmt"""
+        #| do_while_stmt
+#                         | for_stmt
+#                         | switch_stmt
+        p[0] = p[1]
+                 
+    def p_statement_while(self, p):
+        """while_stmt : WHILE test suite"""
+        p[0] = While(p[2], p[3])
+        
+    def p_func_def_stmt(self, p):
+        """func_def_stmt : DEF NAME LPAREN RPAREN suite
+                         | DEF NAME LPAREN func_def_args RPAREN suite"""
+        p[0] = FuncDef(p[2], p[4], p[6])
+    
+    def p_print_stmt(self, p):
+        """print_stmt : PRINT func_call_args"""
         p[0] = Print(p[2])
     
-    def p_function_args(self, p):
-        """function_args : NAME
-                | NAME COMA function_args"""
-        if len(p) == 2:
-            p[0] = Args(p[1])
+    def p_func_def_args(self, p):
+        """func_def_args : type_name NAME
+                         | type_name NAME COMA func_def_args"""
+        if len(p) == 3:
+            #musimy uzyc tuples, bo listy i dicty sa unhashable, a potrzebujemy ponizsza strukture wsadzic do seta. 
+            p[0] = tuple([tuple([p[1],p[2]])])
         else:
-            p[0] = Args(p[1], p[3])
+            p[0] = p[1] + p[4]
             
-    def p_fun_args(self, p):
-        """fun_args : expression
-                    | expression COMA fun_args"""
-        if len(p) == 2:
-            p[0] = Args(p[1])
-        else:
-            p[0] = Args(p[1], p[3])
-        
-    def p_block(self, p):
-        """block : expression
-                 | return
-                 | expression SEMICOLON block"""
-        if len(p) == 2:
-            p[0] = Block(p[1])
-        else:
-            p[0] = Block(p[1], p[3])
-    
+    def p_type_name(self, p):
+            """type_name : INTEGER_NAME
+                         | STRING_NAME
+                         | FLOAT_NAME
+                         | BOOLEAN_NAME"""
+            p[0] = p[1]
+            
     def p_test(self, p):
-        """test : LPAREN relexpr RPAREN
-                | relexpr"""
+        """test : LPAREN comparision RPAREN
+                | comparision"""
         if len(p) == 4:
             p[0] = p[2]
         else:
             p[0] = p[1]
         
-    def p_return(self, p):
-        """return : RETURN
-                  | RETURN expression"""
+    def p_return_stmt(self, p):
+        """return_stmt : RETURN
+                       | RETURN expression"""
         if len(p) == 2:
             p[0] = Return()
         else:
@@ -151,8 +176,17 @@ class Parser(Interpreter, Lexer):
 
 
     def p_func_call(self, p):
-        'expression : NAME LPAREN fun_args RPAREN'
+        """func_call_stmt : NAME LPAREN func_call_args RPAREN"""
         p[0] = FuncCall(p[1], p[3])
+        
+    def p_func_call_args(self, p):
+        """func_call_args : expression
+                          | expression COMA func_call_args"""
+        if len(p) == 2:
+            p[0] = [p[1]]
+        else:
+            p[0] = p[1] + p[3]
+        
 
     def p_error(self, p):
         print "Syntax error at '%s'" % p.value

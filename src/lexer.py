@@ -11,12 +11,18 @@ class Lexer(Interpreter):
                 'def' : 'DEF',
                 'print' : 'PRINT',
                 'return' : 'RETURN',
-                'import' : 'IMPORT'}
+                'import' : 'IMPORT',
+                'begin' : 'BEGIN',
+                'end' : 'END',
+                'int' : 'INTEGER_NAME',
+                'str' : 'STRING_NAME',
+                'bool' : 'BOOLEAN_NAME',
+                'float' : 'FLOAT_NAME'}
     
     relops = [ 'EQ', 'NE', 'GT', 'LT', 'GE', 'LE' ]
     
     tokens = [
-        'NAME', 'INTEGER', 'FLOAT', 'STRING', 'BOOLEAN',
+        'NAME', 'INTEGER_TYPE', 'FLOAT_TYPE', 'STRING_TYPE', 'BOOLEAN_TYPE',
         'PLUS', 'MINUS', 'POW', 'TIMES', 'DIVIDE', 'ASSIGN',
         'LPAREN', 'RPAREN', 'NEWLINE', 'COLON', 'SEMICOLON', 'COMA', 'FILENAME'
         ] + list(reserved.values()) + relops
@@ -47,12 +53,12 @@ class Lexer(Interpreter):
         t.value = str(t.value)[1:-1]
         return t
     
-    def t_BOOLEAN(self, t):
+    def t_BOOLEAN_TYPE(self, t):
         r'(True)|(False)'
         t.value = bool(t.value)
         return t
     
-    def t_STRING(self, t):
+    def t_STRING_TYPE(self, t):
         r'(\'.+\')|(\".+\")'
         t.value = str(t.value)[1:-1]
         return t
@@ -62,7 +68,7 @@ class Lexer(Interpreter):
         t.type = self.reserved.get(t.value, 'NAME')    # Check for reserved words
         return t
     
-    def t_FLOAT(self, t):
+    def t_FLOAT_TYPE(self, t):
         r"""(\d+\.\d*|\.\d+)([eE][-+]?\d+)?"""
         try:
             t.value = float(t.value)
@@ -71,7 +77,7 @@ class Lexer(Interpreter):
             t.value = 0.0
         return t
 
-    def t_INTEGER(self, t):
+    def t_INTEGER_TYPE(self, t):
         r'\d+'
         try:
             t.value = int(t.value)

@@ -1,5 +1,2 @@
-def g(z):
-	if z == 1 then
-		return 1
-	else
-		return z*g(z-1)
+def g(int z)
+	print z
