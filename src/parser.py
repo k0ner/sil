@@ -39,12 +39,12 @@ class Parser(Interpreter, Lexer):
         p[0] = BinaryOp(p[2], p[1], p[3])
 
     def p_assign_stmt(self, p):
-        """assign_stmt : NAME ASSIGN assignment
-                       | GLOBAL NAME ASSIGN assignment"""
-        if len(p) == 4:
-            p[0] = Assign(p[1], p[3])
-        else:
-            p[0] = GlobalAssignment(p[2], p[4])
+        """assign_stmt : NAME ASSIGN assignment"""
+        p[0] = Assign(p[1], p[3])
+            
+    def p_global_assign_stmt(self, p):
+        """assign_stmt : GLOBAL_NAME ASSIGN assignment"""
+        p[0] = GlobalAssignment(p[1], p[3])
         
     def p_assignment(self, p):
         """assignment : expression
@@ -185,8 +185,8 @@ class Parser(Interpreter, Lexer):
         p[0] = Select(p[1])
         
     def p_select_global_selection(self, p):
-        """expression : GLOBAL NAME"""
-        p[0] = GlobalSelection(p[2])
+        """expression : GLOBAL_NAME"""
+        p[0] = GlobalSelection(p[1])
 
     def p_func_call(self, p):
         """func_call_stmt : NAME LPAREN RPAREN

@@ -155,11 +155,13 @@ class Evaluator():
     def visit_GlobalAssignment(self, node):
         result = self.visit(node.value)
         try:
+            #ponizsza instrukcja jest tylko po to zeby rzucilo wyjatek jesli nie ma takiej zmiennej globalnej
+            self.__globals[node.name]
             self.__globals[node.name] = result
             self.__variables[node.name] = result
         except KeyError:
             #nie mozemy stworzyc nowej zmiennej
-            print "Variable ", node.name, " does not exist in global context. Cannot create global variable from a local context."
+            print "Variable", node.name, "does not exist in global context. Cannot create global variable from a local context."
             result = None
         except Exception:
             print "global prefix used in incorrect context"
@@ -170,7 +172,7 @@ class Evaluator():
         try:
             result = self.__globals[node.name]
         except KeyError:
-            print "Variable ", node.name, " does not exist in global context."
+            print "Variable", node.name, "does not exist in global context."
             result = None
         return result
     
