@@ -19,7 +19,8 @@ class Parser(Interpreter, Lexer):
                      | comparision
                      | assign_stmt
                      | import
-                     | compound_stmt"""
+                     | compound_stmt
+                     | func_call_stmt"""
         p[0] = p[1]
         
     def p_import(self, p):
@@ -38,8 +39,12 @@ class Parser(Interpreter, Lexer):
         p[0] = BinaryOp(p[2], p[1], p[3])
 
     def p_assign_stmt(self, p):
-        """assign_stmt : NAME ASSIGN assignment"""
-        p[0] = Assign(p[1], p[3])
+        """assign_stmt : NAME ASSIGN assignment
+                       | GLOBAL NAME ASSIGN assignment"""
+        if len(p) == 4:
+            p[0] = Assign(p[1], p[3])
+        else:
+            p[0] = GlobalAssignment(p[2], p[4])
         
     def p_assignment(self, p):
         """assignment : expression
@@ -108,7 +113,7 @@ class Parser(Interpreter, Lexer):
         if len(p) == 2:
             p[0] = [p[1]]
         else:
-            p[0] = p[1] + p[3]
+            p[0] = [p[1]] + p[3]
             
     def p_stmt(self, p):
         #for test too
@@ -120,7 +125,8 @@ class Parser(Interpreter, Lexer):
                          | while_stmt
                          | func_def_stmt
                          | print_stmt
-                         | return_stmt"""
+                         | return_stmt
+                         | assign_stmt"""
         #| do_while_stmt
 #                         | for_stmt
 #                         | switch_stmt
@@ -137,7 +143,10 @@ class Parser(Interpreter, Lexer):
     def p_func_def_stmt(self, p):
         """func_def_stmt : DEF NAME LPAREN RPAREN suite
                          | DEF NAME LPAREN func_def_args RPAREN suite"""
-        p[0] = FuncDef(p[2], p[4], p[6])
+        if len(p) == 6:
+            p[0] = FuncDef(p[2], tuple([]), p[5])
+        else:
+            p[0] = FuncDef(p[2], p[4], p[6])
     
     def p_func_def_args(self, p):
         """func_def_args : type_name NAME
@@ -146,7 +155,7 @@ class Parser(Interpreter, Lexer):
             #musimy uzyc tuples, bo listy i dicty sa unhashable, a potrzebujemy ponizsza strukture wsadzic do seta. 
             p[0] = tuple([tuple([p[1],p[2]])])
         else:
-            p[0] = p[1] + p[4]
+            p[0] = tuple([tuple([p[1],p[2]])]) + p[4]
             
     def p_type_name(self, p):
             """type_name : INTEGER_NAME
@@ -174,11 +183,18 @@ class Parser(Interpreter, Lexer):
     def p_expression_name(self, p):
         'expression : NAME'
         p[0] = Select(p[1])
-
+        
+    def p_select_global_selection(self, p):
+        """expression : GLOBAL NAME"""
+        p[0] = GlobalSelection(p[2])
 
     def p_func_call(self, p):
-        """func_call_stmt : NAME LPAREN func_call_args RPAREN"""
-        p[0] = FuncCall(p[1], p[3])
+        """func_call_stmt : NAME LPAREN RPAREN
+                          | NAME LPAREN func_call_args RPAREN"""
+        if len(p) == 4:
+            p[0] = FuncCall(p[1], [])
+        else:
+            p[0] = FuncCall(p[1], p[3])
         
     def p_func_call_args(self, p):
         """func_call_args : expression
@@ -186,7 +202,7 @@ class Parser(Interpreter, Lexer):
         if len(p) == 2:
             p[0] = [p[1]]
         else:
-            p[0] = p[1] + p[3]
+            p[0] = [p[1]] + p[3]
         
 
     def p_error(self, p):

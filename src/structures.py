@@ -4,6 +4,7 @@ class Map:
         
     def add(self, name, args, body):
         for item in self.container:
+            #tutaj trzeba poprawic, bo nie wykryje roznicy pomiedzy bool x i bool y
             if name == item[0] and args == item[1]:
                 self.container.remove(item)
                 break

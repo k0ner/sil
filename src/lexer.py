@@ -17,7 +17,8 @@ class Lexer(Interpreter):
                 'int' : 'INTEGER_NAME',
                 'str' : 'STRING_NAME',
                 'bool' : 'BOOLEAN_NAME',
-                'float' : 'FLOAT_NAME'}
+                'float' : 'FLOAT_NAME',
+                'global' : 'GLOBAL'}
     
     relops = [ 'EQ', 'NE', 'GT', 'LT', 'GE', 'LE' ]
     

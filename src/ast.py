@@ -114,3 +114,16 @@ class Select(Node):
         self.type = 'selection'
         self.name = name
         self.coord = coord
+        
+class GlobalSelection(Node):
+    def __init__(self, name, coord=None):
+        self.type = 'global_selection'
+        self.name = name
+        self.coord = coord
+        
+class GlobalAssignment(Node):
+    def __init__(self, name, value, coord=None):
+        self.type = 'global_assignment'
+        self.name = name
+        self.value = value
+        self.coord = coord

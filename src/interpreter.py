@@ -37,3 +37,9 @@ class Interpreter:
                 break
             if not s: continue
             evalek.visit(yacc.parse(s))
+            
+if __name__ == '__main__':
+    print "elo"
+    eval = Evaluator()
+    f = getattr(eval, "elo1")
+    f()

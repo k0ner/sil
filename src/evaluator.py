@@ -1,70 +1,64 @@
 import copy
 from ast import Node
 from structures import *
+import re
 
 class Evaluator():
 
     def __init__(self):
         self.__variables = { }
+        self.__globals = None
         self.__functions = Map()
-        self.toReturn = False
     
+    #przerobic na postac nastepujaca:
+    # function = getattr(self,"visit_"+nazwa)
+    # return function(ast)
     def visit(self, ast):
         if ast.type == "selection":
-            print ast.type
             return self.visit_Select(ast)
         if ast.type == "assignment":
-            print ast.type
             return self.visit_Assign(ast)
         if ast.type == "ifelse":
-            print ast.type
             return self.visit_IfThenElse(ast)
         if ast.type == "relexpr":
-            print ast.type
             return self.visit_RelExpr(ast)
-        if ast.type == "boolean":
-            print ast.type
+        if ast.type == "bool":
             return self.visit_Boolean(ast)
-        if ast.type == "integer":
-            print ast.type
+        if ast.type == "int":
             return self.visit_Integer(ast)
+        if ast.type == "string":
+            return ast.value
         if ast.type == "unaryop":
-            print ast.type
             return self.visit_UnaryOp(ast)
         if ast.type == "binaryop":
-            print ast.type
             return self.visit_BinaryOp(ast)
         if ast.type == "while":
-            print ast.type
             return self.visit_While(ast)
         if ast.type == "block":
-            print ast.type
             return self.visit_Block(ast)
         if ast.type == "funcdef":
-            print ast.type
             return self.visit_FuncDef(ast)
         if ast.type == "print":
-            print ast.type
             return self.visit_Print(ast.args)
         if ast.type == "funccall":
-            print ast.type
             return self.visit_FuncCall(ast)
         if ast.type == "return":
-            print ast.type
             return self.visit_Return(ast)
+        if ast.type == 'global_assignment':
+            return self.visit_GlobalAssignment(ast)
+        if ast.type == 'global_selection':
+            return self.visit_GlobalSelection(ast)
         
     def visit_Return(self, node):
         return self.visit(node.value)
     
     def visit_Print(self, node):
-        if isinstance(node, Node):
-            print self.visit(node.arg),
-        else:
-            print node
-        if node.nextArgs:
-            self.visit_Print(node.nextArgs)
-        else:
-            print
+        for item in node:
+            if isinstance(item, Node):
+                print self.visit(item),
+            else:
+                print item
+        print
     
     def visit_FuncDef(self, node):
         self.__functions.add(node.name, node.args, node.body)
@@ -72,86 +66,73 @@ class Evaluator():
     def visit_FuncCall(self, node):
         tmpVariables = copy.deepcopy(self.__variables)
         tmpFunctions = copy.deepcopy(self.__functions)
+        if not self.__globals:
+            self.__globals = copy.deepcopy(self.__variables)
+        
         #dostajemy wszystkie definicje funkcji zwiazanych z dana nazwa, pozniej musimy sprawdzic zmienne czy sa odpowiedniego typu
         defList = self.__functions.get(node.name)
+        callArgs = [tuple([re.search('(?<=\')\w+', str(type(self.visit(arg)))).group(0), self.visit(arg)]) for arg in node.args]
         possibleToUse = []
         for definition in defList:
             #definition[1] to jest lokalizacja argumentow w krotce
-            if len(definition[1]) == len(node.args):
+            if len(definition[1]) == len(callArgs):
                 bestFits = True
                 i = 0;
                 metric = 0.0;
                 #lecimy po wszystkich argumentach i sprawdzamy czy da sie rzutowac, jesli nie to przerywamy petle
                 while i < len(definition[1]):
-                    if definition[1][i][0] == node.args[i].type:
+                    if definition[1][i][0] == callArgs[i][0]:
                         print "zgadza sie"
                         metric += 1.
-                    elif definition[1][i][0] == 'int' and node.args[i].type == 'float':
+                    elif definition[1][i][0] == 'int' and callArgs[i][0] == 'float':
                         bestFits = False
                         metric += 0.9
                         print "rzutowanie float na int"
-                    elif definition[1][i][0] == 'float' and node.args[i].type == 'int':
+                    elif definition[1][i][0] == 'float' and callArgs[i][0] == 'int':
                         bestFits = False
                         metric += 0.45
                         print "rzutowanie int na float"
-                    elif definition[1][i][0] == 'bool' and node.args[i].type == 'int':
+                    elif definition[1][i][0] == 'bool' and callArgs[i][0] == 'int':
                         bestFits = False
                         metric += 0.8
                         print "rzutowanie int na bool"
-                    elif definition[1][i][0] == 'bool' and node.args[i].type == 'float':
+                    elif definition[1][i][0] == 'bool' and callArgs[i][0] == 'float':
                         bestFits = False
                         metric += 0.7
                         print "rzutowanie float na bool"
                     else:
+                        bestFits = False
                         break
                     i = i+1
                     
                 #jesli mamy best fita, to super
                 if bestFits:
+                    print "dobrze dopasowalo"
                     possibleToUse = definition
                     break
                 #dodajemy do listy w postaci elementu slownika {wartosc_metryki : definicja}
                 possibleToUse.append(tuple([metric, definition]))
         #musimy teraz posortowac od razu odwrotnie, zeby wziac pierwszy element (rownie dobrze mozemy wziac ostatni, ale tak jest bardziej intuicyjnie)
-        print possibleToUse
         
         if isinstance(possibleToUse, list):
             possibleToUse = sorted(possibleToUse, key=lambda item: item[0], reverse=True)
             definition = possibleToUse[0][1]
-            print "tutaj"
         else:
             definition = possibleToUse
-            print len(possibleToUse[1])
         
         i = 0
-        print definition
-        print definition[1], len(definition[1])
         while i < len(definition[1]):
-            print definition[1][i], node.args[i].value
-            self.__variables[definition[1][i][1]] = self.assign_with_cast(definition[1][i][0], node.args[i].value)
-            i =+ 1
+            self.__variables[definition[1][i][1]] = self.assign_with_cast(definition[1][i][0], callArgs[i][1])
+            i += 1
             
         result = self.visit(definition[2])
-        
         self.__functions = copy.deepcopy(tmpFunctions)
-        self.__variables = copy.deepcopy(tmpVariables)
-        
+        if self.__globals:
+            self.__variables = copy.deepcopy(self.__globals)
+            self.__globals = None
+        else:
+            self.__variables = copy.deepcopy(tmpVariables)
         return result
-        #=======================================================================
-        # definition = self.__variables[node.name]
-        # defArgs = definition.args
-        # callArgs = node.args
-        # if defArgs.arg:
-        #    self.__variables[defArgs.arg] = self.visit(callArgs.arg)
-        #    print self.__variables
-        # while defArgs.nextArgs:
-        #    defArgs = defArgs.nextArgs
-        #    callArgs = callArgs.nextArgs
-        #    self.__variables[defArgs.arg] = self.visit(callArgs.arg)
-        # result = self.visit(definition.body)
-        # self.__variables = copy.deepcopy(tmpVariables)
-        # return result
-        #=======================================================================
     
     def visit_Block(self, node):
         for item in node.stmts:
@@ -166,9 +147,32 @@ class Evaluator():
         return
     
     def visit_Assign(self, node):
-        self.__variables[node.name] = self.visit(node.value)
+        result = self.visit(node.value)
+        self.__variables[node.name] = result
         print self.__variables
-        return
+        return result
+    
+    def visit_GlobalAssignment(self, node):
+        result = self.visit(node.value)
+        try:
+            self.__globals[node.name] = result
+            self.__variables[node.name] = result
+        except KeyError:
+            #nie mozemy stworzyc nowej zmiennej
+            print "Variable ", node.name, " does not exist in global context. Cannot create global variable from a local context."
+            result = None
+        except Exception:
+            print "global prefix used in incorrect context"
+            result = None
+        return result
+    
+    def visit_GlobalSelection(self, node):
+        try:
+            result = self.__globals[node.name]
+        except KeyError:
+            print "Variable ", node.name, " does not exist in global context."
+            result = None
+        return result
     
     def visit_Select(self, node):
         return self.__variables[node.name]
@@ -180,7 +184,6 @@ class Evaluator():
         #    self.tmpNames = None
         # return result
         #=======================================================================
-        
     
     def visit_RelExpr(self, node):
         if node.op == '==':
