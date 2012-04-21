@@ -119,7 +119,8 @@ class Parser(Interpreter, Lexer):
         """compound_stmt : if_stmt
                          | while_stmt
                          | func_def_stmt
-                         | print_stmt"""
+                         | print_stmt
+                         | return_stmt"""
         #| do_while_stmt
 #                         | for_stmt
 #                         | switch_stmt
@@ -129,14 +130,14 @@ class Parser(Interpreter, Lexer):
         """while_stmt : WHILE test suite"""
         p[0] = While(p[2], p[3])
         
+    def p_print_stmt(self, p):
+        """print_stmt : PRINT func_call_args"""
+        p[0] = Print(p[2])
+        
     def p_func_def_stmt(self, p):
         """func_def_stmt : DEF NAME LPAREN RPAREN suite
                          | DEF NAME LPAREN func_def_args RPAREN suite"""
         p[0] = FuncDef(p[2], p[4], p[6])
-    
-    def p_print_stmt(self, p):
-        """print_stmt : PRINT func_call_args"""
-        p[0] = Print(p[2])
     
     def p_func_def_args(self, p):
         """func_def_args : type_name NAME

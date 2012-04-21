@@ -33,13 +33,6 @@ class FuncDefArgs(Node):
         self.type = 'funcdefargs'
         self.argsList = argsList
         self.coord = coord
-        
-class Args(Node):
-    def __init__(self, arg, nextArgs=None, coord=None):
-        self.type = 'args'
-        self.arg = arg
-        self.nextArgs = nextArgs
-        self.coord = coord
 
 class Block(Node):
     def __init__(self, stmts, coord=None):

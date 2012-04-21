@@ -1,2 +1,2 @@
 def g(int z)
-	print z
+	print y

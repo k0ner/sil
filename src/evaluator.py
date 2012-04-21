@@ -1,6 +1,6 @@
 import copy
 from ast import Node
-from functions_maps import *
+from structures import *
 
 class Evaluator():
 
@@ -74,17 +74,69 @@ class Evaluator():
         tmpFunctions = copy.deepcopy(self.__functions)
         #dostajemy wszystkie definicje funkcji zwiazanych z dana nazwa, pozniej musimy sprawdzic zmienne czy sa odpowiedniego typu
         defList = self.__functions.get(node.name)
+        possibleToUse = []
         for definition in defList:
             #definition[1] to jest lokalizacja argumentow w krotce
             if len(definition[1]) == len(node.args):
+                bestFits = True
                 i = 0;
+                metric = 0.0;
+                #lecimy po wszystkich argumentach i sprawdzamy czy da sie rzutowac, jesli nie to przerywamy petle
                 while i < len(definition[1]):
                     if definition[1][i][0] == node.args[i].type:
                         print "zgadza sie"
+                        metric += 1.
+                    elif definition[1][i][0] == 'int' and node.args[i].type == 'float':
+                        bestFits = False
+                        metric += 0.9
+                        print "rzutowanie float na int"
+                    elif definition[1][i][0] == 'float' and node.args[i].type == 'int':
+                        bestFits = False
+                        metric += 0.45
+                        print "rzutowanie int na float"
+                    elif definition[1][i][0] == 'bool' and node.args[i].type == 'int':
+                        bestFits = False
+                        metric += 0.8
+                        print "rzutowanie int na bool"
+                    elif definition[1][i][0] == 'bool' and node.args[i].type == 'float':
+                        bestFits = False
+                        metric += 0.7
+                        print "rzutowanie float na bool"
                     else:
-                        print "nie zgadza sie"
+                        break
                     i = i+1
+                    
+                #jesli mamy best fita, to super
+                if bestFits:
+                    possibleToUse = definition
+                    break
+                #dodajemy do listy w postaci elementu slownika {wartosc_metryki : definicja}
+                possibleToUse.append(tuple([metric, definition]))
+        #musimy teraz posortowac od razu odwrotnie, zeby wziac pierwszy element (rownie dobrze mozemy wziac ostatni, ale tak jest bardziej intuicyjnie)
+        print possibleToUse
         
+        if isinstance(possibleToUse, list):
+            possibleToUse = sorted(possibleToUse, key=lambda item: item[0], reverse=True)
+            definition = possibleToUse[0][1]
+            print "tutaj"
+        else:
+            definition = possibleToUse
+            print len(possibleToUse[1])
+        
+        i = 0
+        print definition
+        print definition[1], len(definition[1])
+        while i < len(definition[1]):
+            print definition[1][i], node.args[i].value
+            self.__variables[definition[1][i][1]] = self.assign_with_cast(definition[1][i][0], node.args[i].value)
+            i =+ 1
+            
+        result = self.visit(definition[2])
+        
+        self.__functions = copy.deepcopy(tmpFunctions)
+        self.__variables = copy.deepcopy(tmpVariables)
+        
+        return result
         #=======================================================================
         # definition = self.__variables[node.name]
         # defArgs = definition.args
@@ -172,3 +224,13 @@ class Evaluator():
     
     def printAst(self, ast):
         print ast.expr
+        
+    def assign_with_cast(self, castTo, value):
+        if castTo == 'int':
+            return int(value)
+        if castTo == 'float':
+            return float(value)
+        if castTo == 'bool':
+            return bool(value)
+        if castTo == 'string':
+            return str(value)
