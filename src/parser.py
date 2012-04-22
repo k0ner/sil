@@ -28,7 +28,6 @@ class Parser(Interpreter, Lexer):
         print p[2]
         f = open(p[2], 'r')
         file = f.read()
-        print file
         p[0] = Block([yacc.parse(file)])
     
     def p_expression_binop(self, p):
