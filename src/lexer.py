@@ -65,12 +65,12 @@ class Lexer(Interpreter):
         return t
 
     def t_NAME(self, t):
-        r'[a-zA-Z_][a-zA-Z0-9_]*'
+        r'[a-zA-Z][a-zA-Z0-9_]*'
         t.type = self.reserved.get(t.value, 'NAME')    # Check for reserved words
         return t
     
     def t_GLOBAL_NAME(self, t):
-        r'\$[a-zA-Z_][a-zA-Z0-9_]*'
+        r'_[a-zA-Z][a-zA-Z0-9_]*'
         t.type = self.reserved.get(t.value, 'GLOBAL_NAME')    # Check for reserved words
         t.value = str(t.value)[1:]
         return t

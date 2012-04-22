@@ -8,6 +8,7 @@ class Evaluator():
     def __init__(self):
         self.__variables = { }
         self.__globals = None
+        self.__closures = Map()
         self.__functions = Map()
     
     #przerobic na postac nastepujaca:
@@ -44,10 +45,8 @@ class Evaluator():
             return self.visit_FuncCall(ast)
         if ast.type == "return":
             return self.visit_Return(ast)
-        if ast.type == 'global_assignment':
-            return self.visit_GlobalAssignment(ast)
-        if ast.type == 'global_selection':
-            return self.visit_GlobalSelection(ast)
+        func = getattr(self, "visit_" + ast.type)
+        return func(ast)
         
     def visit_Return(self, node):
         return self.visit(node.value)
@@ -64,17 +63,48 @@ class Evaluator():
         self.__functions.add(node.name, node.args, node.body)
     
     def visit_return_closure(self, node):
-        self.visit(node.value)
-        return self.__functions.get(node.value.name)
+        closure = node.value.stmts[0]
+        current_variables = { }
+        for k, v in self.__variables.items():
+            if self.is_simple_type(v):
+                current_variables.update({k : v})
+        self.__closures.add(closure.name, closure.args, closure.body)
+        print self.__closures.get(closure.name)
+        return tuple([ self.__closures.get(closure.name), current_variables])
     
     def visit_FuncCall(self, node):
-        tmpVariables = copy.deepcopy(self.__variables)
-        tmpFunctions = copy.deepcopy(self.__functions)
-        if not self.__globals:
-            self.__globals = copy.deepcopy(self.__variables)
         
         #dostajemy wszystkie definicje funkcji zwiazanych z dana nazwa, pozniej musimy sprawdzic zmienne czy sa odpowiedniego typu
         defList = self.__functions.get(node.name)
+        is_closure = False
+        
+        if defList == []:
+            try:
+                defList = self.__variables[node.name]
+                is_closure = True
+            except Exception:
+                print "Function", node.name, "not found."
+                return
+        print "####otrzymane funckje", defList
+
+        #kopiujemy srodowiska
+        if not self.__globals:
+            self.__globals = copy.deepcopy(self.__variables)
+            
+        if is_closure:
+            """trzeba uwazac, bo tutaj wszystko dziala jako przekazywanie przez wartosc, a nie przez referencje,
+            wiec jesli przekazemy do funkcji zmienna to bedzie przekazana jej aktualna wartosc!!
+            przy wywolaniu typu: z = 1; add_z = returnClosure(z); print add_z(x);
+            wyswietlona zostanie wartosc x+1
+            jesli dalej damy z = 3 i znowu wywolamy print add_z(x) to dalej bedzie sie wyswietlalo
+            x+1, a nie jak moznaby przypuszczac x+3, poniewaz w fcji returnClosure(z) zostala uzyta wartosc tej zmiennej, a nie referencja"""
+            tmpVariables = copy.deepcopy(self.__variables)
+            self.__variables.update(defList[1])
+            defList = defList[0]
+        else:
+            tmpVariables = copy.deepcopy(self.__variables)
+        tmpFunctions = copy.deepcopy(self.__functions)
+        
         callArgs = [tuple([re.search('(?<=\')\w+', str(type(self.visit(arg)))).group(0), self.visit(arg)]) for arg in node.args]
         possibleToUse = []
         for definition in defList:
@@ -156,7 +186,7 @@ class Evaluator():
         print self.__variables
         return result
     
-    def visit_GlobalAssignment(self, node):
+    def visit_global_assignment(self, node):
         result = self.visit(node.value)
         try:
             #ponizsza instrukcja jest tylko po to zeby rzucilo wyjatek jesli nie ma takiej zmiennej globalnej
@@ -172,7 +202,7 @@ class Evaluator():
             result = None
         return result
     
-    def visit_GlobalSelection(self, node):
+    def visit_global_selection(self, node):
         try:
             result = self.__globals[node.name]
         except KeyError:
@@ -233,6 +263,11 @@ class Evaluator():
     
     def printAst(self, ast):
         print ast.expr
+        
+    def is_simple_type(self, value):
+        if isinstance(value, int) or isinstance(value, str) or isinstance(value, float) or isinstance(value, bool):
+            return True
+        return False
         
     def assign_with_cast(self, castTo, value):
         if castTo == 'int':
