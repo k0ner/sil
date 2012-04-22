@@ -37,21 +37,15 @@ class Evaluator():
             return self.visit_While(ast)
         if ast.type == "block":
             return self.visit_Block(ast)
-        if ast.type == "funcdef":
-            return self.visit_FuncDef(ast)
-        if ast.type == "print":
-            return self.visit_Print(ast.args)
         if ast.type == "funccall":
             return self.visit_FuncCall(ast)
-        if ast.type == "return":
-            return self.visit_Return(ast)
         func = getattr(self, "visit_" + ast.type)
         return func(ast)
         
-    def visit_Return(self, node):
+    def visit_return(self, node):
         return self.visit(node.value)
     
-    def visit_Print(self, node):
+    def visit_print(self, node):
         for item in node:
             if isinstance(item, Node):
                 print self.visit(item),
@@ -59,7 +53,7 @@ class Evaluator():
                 print item
         print
     
-    def visit_FuncDef(self, node):
+    def visit_func_def(self, node):
         self.__functions.add(node.name, node.args, node.body)
     
     def visit_return_closure(self, node):

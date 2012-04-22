@@ -19,7 +19,7 @@ class Print(Node):
 
 class FuncDef(Node):
     def __init__(self, name, args, body, returns=None, coord=None):
-        self.type = 'funcdef'
+        self.type = 'func_def'
         self.name = name
         self.args = args
         self.body = body
