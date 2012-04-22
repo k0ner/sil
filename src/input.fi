@@ -1,3 +1,0 @@
-def returnClosure(int argument)
-	return def function(int x)
-		return argument + x

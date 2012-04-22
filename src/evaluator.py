@@ -15,51 +15,21 @@ class Evaluator():
     # function = getattr(self,"visit_"+nazwa)
     # return function(ast)
     def visit(self, ast):
-        if ast.type == "selection":
-            return self.visit_Select(ast)
-        if ast.type == "assignment":
-            return self.visit_Assign(ast)
-        if ast.type == "ifelse":
-            return self.visit_IfThenElse(ast)
-        if ast.type == "relexpr":
-            return self.visit_RelExpr(ast)
-        if ast.type == "bool":
-            return self.visit_Boolean(ast)
-        if ast.type == "int":
-            return self.visit_Integer(ast)
-        if ast.type == "string":
-            return ast.value
-        if ast.type == "unaryop":
-            return self.visit_UnaryOp(ast)
-        if ast.type == "binaryop":
-            return self.visit_BinaryOp(ast)
-        if ast.type == "while":
-            return self.visit_While(ast)
-        if ast.type == "block":
-            return self.visit_Block(ast)
-        if ast.type == "funcdef":
-            return self.visit_FuncDef(ast)
-        if ast.type == "print":
-            return self.visit_Print(ast.args)
-        if ast.type == "funccall":
-            return self.visit_FuncCall(ast)
-        if ast.type == "return":
-            return self.visit_Return(ast)
         func = getattr(self, "visit_" + ast.type)
         return func(ast)
         
-    def visit_Return(self, node):
+    def visit_return(self, node):
         return self.visit(node.value)
     
-    def visit_Print(self, node):
-        for item in node:
+    def visit_print(self, node):
+        for item in node.args:
             if isinstance(item, Node):
                 print self.visit(item),
             else:
                 print item
         print
     
-    def visit_FuncDef(self, node):
+    def visit_func_def(self, node):
         self.__functions.add(node.name, node.args, node.body)
     
     def visit_return_closure(self, node):
@@ -69,20 +39,9 @@ class Evaluator():
             if self.is_simple_type(v):
                 current_variables.update({k : v})
         self.__closures.add(closure.name, closure.args, closure.body)
-        print self.__closures.get(closure.name)
         return tuple([ self.__closures.get(closure.name), current_variables])
 
-    def visit_pointer_assignment(self, node):
-        self.__variables[node.name] = node.point_to
-        print self.__variables
-
-    #to musi zostac przerobione, bo i tak nie bedzie dzialalo!
-    def visit_pointer_selection(self, node):
-        print "tutaj"
-        return self.__variables[node.name]
-
-    def visit_FuncCall(self, node):
-        
+    def visit_func_call(self, node):
         #dostajemy wszystkie definicje funkcji zwiazanych z dana nazwa, pozniej musimy sprawdzic zmienne czy sa odpowiedniego typu
         defList = self.__functions.get(node.name)
         is_closure = False
@@ -94,7 +53,6 @@ class Evaluator():
             except Exception:
                 print "Function", node.name, "not found."
                 return
-        print "####otrzymane funckje", defList
 
         #kopiujemy srodowiska
         if not self.__globals:
@@ -125,24 +83,19 @@ class Evaluator():
                 #lecimy po wszystkich argumentach i sprawdzamy czy da sie rzutowac, jesli nie to przerywamy petle
                 while i < len(definition[1]):
                     if definition[1][i][0] == callArgs[i][0]:
-                        print "zgadza sie"
                         metric += 1.
                     elif definition[1][i][0] == 'int' and callArgs[i][0] == 'float':
                         bestFits = False
                         metric += 0.9
-                        print "rzutowanie float na int"
                     elif definition[1][i][0] == 'float' and callArgs[i][0] == 'int':
                         bestFits = False
                         metric += 0.45
-                        print "rzutowanie int na float"
                     elif definition[1][i][0] == 'bool' and callArgs[i][0] == 'int':
                         bestFits = False
                         metric += 0.8
-                        print "rzutowanie int na bool"
                     elif definition[1][i][0] == 'bool' and callArgs[i][0] == 'float':
                         bestFits = False
                         metric += 0.7
-                        print "rzutowanie float na bool"
                     else:
                         bestFits = False
                         break
@@ -150,7 +103,6 @@ class Evaluator():
                     
                 #jesli mamy best fita, to super
                 if bestFits:
-                    print "dobrze dopasowalo"
                     possibleToUse = definition
                     break
                 #dodajemy do listy w postaci elementu slownika {wartosc_metryki : definicja}
@@ -177,19 +129,24 @@ class Evaluator():
             self.__variables = copy.deepcopy(tmpVariables)
         return result
     
-    def visit_Block(self, node):
+    def visit_block(self, node):
         for item in node.stmts:
             result = self.visit(item)
         return result
     
-    def visit_While(self, node):
-        while ( self.visit(node.cond) ):
-            x = self.visit(node.body)
-            if x:
-                return x
-        return
+    def visit_do_while(self, node):
+        while True:
+            result = self.visit(node.body)
+            if not self.visit(node.cond):
+                break
+        return result
     
-    def visit_Assign(self, node):
+    def visit_while(self, node):
+        while ( self.visit(node.cond) ):
+            result = self.visit(node.body)
+        return result
+    
+    def visit_assignment(self, node):
         result = self.visit(node.value)
         self.__variables[node.name] = result
         print self.__variables
@@ -219,7 +176,7 @@ class Evaluator():
             result = None
         return result
     
-    def visit_Select(self, node):
+    def visit_selection(self, node):
         return self.__variables[node.name]
         #=======================================================================
         # result = self.__variables[node.name]
@@ -230,7 +187,7 @@ class Evaluator():
         # return result
         #=======================================================================
     
-    def visit_RelExpr(self, node):
+    def visit_comparision(self, node):
         if node.op == '==':
             return self.visit(node.left) == self.visit(node.right)
         elif node.op == '!=':
@@ -244,7 +201,7 @@ class Evaluator():
         elif node.op == '<=':
             return self.visit(node.left) <= self.visit(node.right)
         
-    def visit_BinaryOp(self, node):
+    def visit_binary_op(self, node):
         if node.op == '+':
             return self.visit(node.left) + self.visit(node.right)
         elif node.op == '-':
@@ -254,17 +211,23 @@ class Evaluator():
         elif node.op == '/':
             return self.visit(node.left) / self.visit(node.right)
         
-    def visit_UnaryOp(self, node):
+    def visit_unary_op(self, node):
         if node.op == '-':
             return -(self.visit(node.expr))
 
-    def visit_Integer(self, node):
+    def visit_string(self, node):
+        return node.value
+
+    def visit_float(self, node):
+        return node.value
+
+    def visit_int(self, node):
         return node.value
     
-    def visit_Boolean(self, node):
-        return bool(node.value)
+    def visit_bool(self, node):
+        return node.value
     
-    def visit_IfThenElse(self, node):
+    def visit_if_then_else(self, node):
         if self.visit(node.cond):
             return self.visit(node.ifTrue)
         elif node.ifFalse:

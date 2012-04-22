@@ -17,12 +17,14 @@ class Parser(Interpreter, Lexer):
     def p_statement(self,p):
         """statement : expression
                      | comparision
-                     | assign_stmt
                      | import
-                     | compound_stmt
-                     | func_call_stmt"""
-        p[0] = p[1]
-        
+                     | func_call_stmt
+                     | stmts"""
+        if isinstance(p[1], list):
+            p[0] = Block(p[1])
+        else:
+            p[0] = Block([p[1]])
+
     def p_import(self, p):
         """import : IMPORT FILENAME"""
         print p[2]
@@ -40,15 +42,11 @@ class Parser(Interpreter, Lexer):
 
     def p_assign_stmt(self, p):
         """assign_stmt : NAME ASSIGN assignment"""
-        p[0] = Assign(p[1], p[3])
+        p[0] = Assignment(p[1], p[3])
             
     def p_global_assign_stmt(self, p):
         """assign_stmt : GLOBAL_NAME ASSIGN assignment"""
         p[0] = GlobalAssignment(p[1], p[3])
-        
-    def p_pointer_assign_stmt(self, p):
-        """assign_stmt : POINTER_NAME ASSIGN assignment"""
-        p[0] = PointerAssignment(p[1], p[3])
         
     def p_assignment(self, p):
         """assignment : expression
@@ -63,7 +61,7 @@ class Parser(Interpreter, Lexer):
                        | expression LT expression
                        | expression GE expression
                        | expression LE expression"""
-        p[0] = RelExpr(p[2], p[1], p[3])
+        p[0] = Comparision(p[2], p[1], p[3])
 
     def p_expression_group(self, p):
         'expression : LPAREN expression RPAREN'
@@ -101,15 +99,15 @@ class Parser(Interpreter, Lexer):
         """suite : simple_stmt
                  | BEGIN stmts END"""
         if len(p) == 2:
-            p[0] = Block([p[1]])
+            p[0] = Block(p[1])
         else:
             p[0] = Block(p[2])
             
     #should refers all statements but used in a single line
     def p_simple_stmt(self, p):
         #currently only for test issues
-        """simple_stmt : compound_stmt"""
-        p[0] = p[1]
+        """simple_stmt : stmt"""
+        p[0] = [p[1]]
             
     def p_stmts(self, p):
         """stmts : stmt
@@ -121,22 +119,26 @@ class Parser(Interpreter, Lexer):
             
     def p_stmt(self, p):
         #for test too
-        """stmt : compound_stmt"""
+        """stmt : compound_stmt
+                | assign_stmt
+                | print_stmt
+                | return_stmt"""
         p[0] = p[1]
     
     def p_compound_stmt(self, p):
         """compound_stmt : if_stmt
                          | while_stmt
                          | func_def_stmt
-                         | print_stmt
-                         | return_stmt
-                         | assign_stmt"""
-#                         | do_while_stmt
+                         | do_while_stmt"""
 #                         | for_stmt
 #                         | switch_stmt
         p[0] = p[1]
-                 
-    def p_statement_while(self, p):
+
+    def p_do_while_stmt(self, p):
+        """do_while_stmt : DO suite WHILE test"""
+        p[0] = DoWhile(p[4], p[2])
+            
+    def p_while_stmt(self, p):
         """while_stmt : WHILE test suite"""
         p[0] = While(p[2], p[3])
         
@@ -190,15 +192,11 @@ class Parser(Interpreter, Lexer):
     
     def p_expression_name(self, p):
         'expression : NAME'
-        p[0] = Select(p[1])
+        p[0] = Selection(p[1])
         
     def p_global_selection(self, p):
         """expression : GLOBAL_NAME"""
         p[0] = GlobalSelection(p[1])
-
-    def p_pointer_selection(self, p):
-        """expression : POINTER_NAME"""
-        p[0] = PointerSelection(p[1])
 
     def p_func_call(self, p):
         """func_call_stmt : NAME LPAREN RPAREN

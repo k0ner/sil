@@ -18,25 +18,18 @@ class Print(Node):
         self.coord = coord
 
 class FuncDef(Node):
-    def __init__(self, name, args, body, returns=None, coord=None):
-        self.type = 'funcdef'
+    def __init__(self, name, args, body, coord=None):
+        self.type = 'func_def'
         self.name = name
         self.args = args
         self.body = body
-        self.returns = returns
         self.coord = coord
         
 class FuncCall(Node):
     def __init__(self, name, args, coord=None):
-        self.type = 'funccall'
+        self.type = 'func_call'
         self.name = name
         self.args = args
-        self.coord = coord
-        
-class FuncDefArgs(Node):
-    def __init__(self, argsList, coord=None):
-        self.type = 'funcdefargs'
-        self.argsList = argsList
         self.coord = coord
 
 class Block(Node):
@@ -51,8 +44,15 @@ class While(Node):
         self.cond = cond
         self.body = body
         self.coord = coord
+        
+class DoWhile(Node):
+    def __init__(self, cond, body, coord=None):
+        self.type = 'do_while'
+        self.cond = cond
+        self.body = body
+        self.coord = coord
 
-class Assign(Node):
+class Assignment(Node):
     def __init__(self, name, value, coord=None):
         self.type = 'assignment'
         self.name = name
@@ -61,7 +61,7 @@ class Assign(Node):
 
 class BinaryOp(Node):
     def __init__(self, op, left, right, coord=None):
-        self.type = 'binaryop'
+        self.type = 'binary_op'
         self.op = op
         self.left = left
         self.right = right
@@ -69,14 +69,14 @@ class BinaryOp(Node):
         
 class UnaryOp(Node):
     def __init__(self, op, expr, coord=None):
-        self.type = 'unaryop'
+        self.type = 'unary_op'
         self.op = op
         self.expr = expr
         self.coord = coord
         
-class RelExpr(Node):
+class Comparision(Node):
     def __init__(self, op, left, right, coord=None):
-        self.type = 'relexpr'
+        self.type = 'comparision'
         self.op = op
         self.left = left
         self.right = right
@@ -108,13 +108,13 @@ class Float(Node):
         
 class IfThenElse(Node):
     def __init__(self, cond, ifTrue, ifFalse, coord=None):
-        self.type = 'ifelse'
+        self.type = 'if_then_else'
         self.cond = cond
         self.ifTrue = ifTrue
         self.ifFalse = ifFalse
         self.coord = coord
         
-class Select(Node):
+class Selection(Node):
     def __init__(self, name, coord=None):
         self.type = 'selection'
         self.name = name
@@ -131,17 +131,4 @@ class GlobalAssignment(Node):
         self.type = 'global_assignment'
         self.name = name
         self.value = value
-        self.coord = coord
-        
-class PointerAssignment(Node):
-    def __init__(self, name, point_to, coord=None):
-        self.type = 'pointer_assignment'
-        self.name = name
-        self.point_to = point_to
-        self.coord = coord
-        
-class PointerSelection(Node):
-    def __init__(self, name, coord=None):
-        self.type = 'pointer_selection'
-        self.name = name
         self.coord = coord
