@@ -1,15 +1,3 @@
-def fun(int x)
-	begin
-		print "#####lokalny ", x;
-		print "#####globalny ", global x;
-		x = 6;
-		print "#####lokalny ", x;
-		print "#####globalny ", global x;
-		global x = 2;
-		print "#####lokalny ", x;
-		print "#####globalny ", global x;
-		global y = 1;
-		y = 1;
-		print "#####lokalny ", y;
-		print "#####globalny ", global y;
-	end 
+def returnClosuer(int argument)
+	return def function(int x)
+		return argument + x

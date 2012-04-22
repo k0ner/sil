@@ -172,13 +172,17 @@ class Parser(Interpreter, Lexer):
         else:
             p[0] = p[1]
         
+    def p_return_none(self, p):
+        """return_stmt : RETURN"""
+        p[0] = Return()
+
     def p_return_stmt(self, p):
-        """return_stmt : RETURN
-                       | RETURN expression"""
-        if len(p) == 2:
-            p[0] = Return()
-        else:
-            p[0] = Return(p[2])
+        """return_stmt : RETURN expression"""
+        p[0] = Return(p[2])
+    
+    def p_return_closure(self, p):
+        """return_stmt : RETURN suite"""
+        p[0] = ReturnClosure(p[2])
     
     def p_expression_name(self, p):
         'expression : NAME'

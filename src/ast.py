@@ -5,6 +5,11 @@ class Return(Node):
         self.type = 'return'
         self.value = value
         self.coord = coord
+        
+class ReturnClosure(Node):
+    def __init__(self, value, coord=None):
+        self.type = 'return_closure'
+        self.value = value
 
 class Print(Node):
     def __init__(self, args, coord=None):

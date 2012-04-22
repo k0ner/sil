@@ -63,6 +63,10 @@ class Evaluator():
     def visit_FuncDef(self, node):
         self.__functions.add(node.name, node.args, node.body)
     
+    def visit_return_closure(self, node):
+        self.visit(node.value)
+        return self.__functions.get(node.value.name)
+    
     def visit_FuncCall(self, node):
         tmpVariables = copy.deepcopy(self.__variables)
         tmpFunctions = copy.deepcopy(self.__functions)
