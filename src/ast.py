@@ -132,3 +132,16 @@ class GlobalAssignment(Node):
         self.name = name
         self.value = value
         self.coord = coord
+        
+class PointerAssignment(Node):
+    def __init__(self, name, point_to, coord=None):
+        self.type = 'pointer_assignment'
+        self.name = name
+        self.point_to = point_to
+        self.coord = coord
+        
+class PointerSelection(Node):
+    def __init__(self, name, coord=None):
+        self.type = 'pointer_selection'
+        self.name = name
+        self.coord = coord

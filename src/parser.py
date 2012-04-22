@@ -46,6 +46,10 @@ class Parser(Interpreter, Lexer):
         """assign_stmt : GLOBAL_NAME ASSIGN assignment"""
         p[0] = GlobalAssignment(p[1], p[3])
         
+    def p_pointer_assign_stmt(self, p):
+        """assign_stmt : POINTER_NAME ASSIGN assignment"""
+        p[0] = PointerAssignment(p[1], p[3])
+        
     def p_assignment(self, p):
         """assignment : expression
                       | comparision
@@ -127,7 +131,7 @@ class Parser(Interpreter, Lexer):
                          | print_stmt
                          | return_stmt
                          | assign_stmt"""
-        #| do_while_stmt
+#                         | do_while_stmt
 #                         | for_stmt
 #                         | switch_stmt
         p[0] = p[1]
@@ -188,9 +192,13 @@ class Parser(Interpreter, Lexer):
         'expression : NAME'
         p[0] = Select(p[1])
         
-    def p_select_global_selection(self, p):
+    def p_global_selection(self, p):
         """expression : GLOBAL_NAME"""
         p[0] = GlobalSelection(p[1])
+
+    def p_pointer_selection(self, p):
+        """expression : POINTER_NAME"""
+        p[0] = PointerSelection(p[1])
 
     def p_func_call(self, p):
         """func_call_stmt : NAME LPAREN RPAREN

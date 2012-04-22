@@ -71,7 +71,16 @@ class Evaluator():
         self.__closures.add(closure.name, closure.args, closure.body)
         print self.__closures.get(closure.name)
         return tuple([ self.__closures.get(closure.name), current_variables])
-    
+
+    def visit_pointer_assignment(self, node):
+        self.__variables[node.name] = node.point_to
+        print self.__variables
+
+    #to musi zostac przerobione, bo i tak nie bedzie dzialalo!
+    def visit_pointer_selection(self, node):
+        print "tutaj"
+        return self.__variables[node.name]
+
     def visit_FuncCall(self, node):
         
         #dostajemy wszystkie definicje funkcji zwiazanych z dana nazwa, pozniej musimy sprawdzic zmienne czy sa odpowiedniego typu

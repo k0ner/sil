@@ -23,7 +23,7 @@ class Lexer(Interpreter):
     relops = [ 'EQ', 'NE', 'GT', 'LT', 'GE', 'LE' ]
     
     tokens = [
-        'NAME', 'GLOBAL_NAME', 'INTEGER_TYPE', 'FLOAT_TYPE', 'STRING_TYPE', 'BOOLEAN_TYPE',
+        'NAME', 'GLOBAL_NAME', 'POINTER_NAME', 'INTEGER_TYPE', 'FLOAT_TYPE', 'STRING_TYPE', 'BOOLEAN_TYPE',
         'PLUS', 'MINUS', 'POW', 'TIMES', 'DIVIDE', 'ASSIGN',
         'LPAREN', 'RPAREN', 'NEWLINE', 'COLON', 'SEMICOLON', 'COMA', 'FILENAME'
         ] + list(reserved.values()) + relops
@@ -67,6 +67,12 @@ class Lexer(Interpreter):
     def t_NAME(self, t):
         r'[a-zA-Z][a-zA-Z0-9_]*'
         t.type = self.reserved.get(t.value, 'NAME')    # Check for reserved words
+        return t
+    
+    def t_POINTER_NAME(self, t):
+        r'\*[a-zA-Z][a-zA-Z0-9_]*'
+        t.type = self.reserved.get(t.value, 'POINTER_NAME')    # Check for reserved words
+        t.value = str(t.value)[1:]
         return t
     
     def t_GLOBAL_NAME(self, t):
