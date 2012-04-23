@@ -1,0 +1,6 @@
+x = 1;
+switch x begin
+	case 1: print "jeden"
+	case 2: print "dwa"
+	default: print "default"
+end

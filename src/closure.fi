@@ -1,0 +1,7 @@
+def returnClosure(int argument)
+	return def function(int x)
+		return argument + x;
+		
+def multiply(int arg)
+	return def by(int x)
+		return arg * x

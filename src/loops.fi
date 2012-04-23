@@ -1,0 +1,12 @@
+x = 1;
+do begin
+	print x;
+	x = x+1
+end while x < 5;
+
+while x < 10
+begin
+	print x;
+	if x == 8 then break;
+	++x
+end
