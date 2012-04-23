@@ -132,3 +132,25 @@ class GlobalAssignment(Node):
         self.name = name
         self.value = value
         self.coord = coord
+        
+class Switch(Node):
+    def __init__(self, select, cases, coord=None):
+        self.type = 'switch'
+        self.select = select
+        self.cases = cases
+        
+class Break(Node):
+    def __init__(self, coord=None):
+        self.type = 'break'
+        
+class PreOperation(Node):
+    def __init__(self, op, select, coord=None):
+        self.type = 'pre_op'
+        self.op = op
+        self.select = select
+        
+class PostOperation(Node):
+    def __init__(self, op, select, coord=None):
+        self.type = 'post_op'
+        self.op = op
+        self.select = select

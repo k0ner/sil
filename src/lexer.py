@@ -18,13 +18,16 @@ class Lexer(Interpreter):
                 'str' : 'STRING_NAME',
                 'bool' : 'BOOLEAN_NAME',
                 'float' : 'FLOAT_NAME',
-                'global' : 'GLOBAL'}
+                'switch' : 'SWITCH',
+                'case' : 'CASE',
+                'break' : 'BREAK',
+                'default' : 'DEFAULT'}
     
     relops = [ 'EQ', 'NE', 'GT', 'LT', 'GE', 'LE' ]
     
     tokens = [
         'NAME', 'GLOBAL_NAME', 'INTEGER_TYPE', 'FLOAT_TYPE', 'STRING_TYPE', 'BOOLEAN_TYPE',
-        'PLUS', 'MINUS', 'POW', 'TIMES', 'DIVIDE', 'ASSIGN',
+        'PLUS', 'MINUS', 'POW', 'TIMES', 'DIVIDE', 'ASSIGN', 'DOUBLEPLUS', 'DOUBLEMINUS',
         'LPAREN', 'RPAREN', 'NEWLINE', 'COLON', 'SEMICOLON', 'COMA', 'FILENAME'
         ] + list(reserved.values()) + relops
     
@@ -41,13 +44,15 @@ class Lexer(Interpreter):
     t_TIMES = r'\*'
     t_DIVIDE = r'/'
     t_ASSIGN = r'='
+    t_DOUBLEPLUS = r'\+\+'
+    t_DOUBLEMINUS = r'--'
     t_LPAREN = r'\('
     t_RPAREN = r'\)'
     t_COLON = r':'
     t_SEMICOLON = r';'
     t_COMA = r','
     
-    t_ignore = " \t\n"
+    t_ignore = ' \t\n'
     
     def t_FILENAME(self, t):
         r'<(\w+)(\.\w+)?>'
@@ -76,7 +81,7 @@ class Lexer(Interpreter):
         return t
     
     def t_FLOAT_TYPE(self, t):
-        r"""(\d+\.\d*|\.\d+)([eE][-+]?\d+)?"""
+        r'''(\d+\.\d*|\.\d+)([eE][-+]?\d+)?'''
         try:
             t.value = float(t.value)
         except ValueError:
@@ -89,15 +94,15 @@ class Lexer(Interpreter):
         try:
             t.value = int(t.value)
         except ValueError:
-            print "Integer value too large", t.value
+            print 'Integer value too large', t.value
             t.value = 0
-        #print "parsed number %s" % repr(t.value)
+        #print 'parsed number %s' % repr(t.value)
         return t
 
     def t_NEWLINE(self, t):
         r'\n+'
-        t.lexer.lineno += t.value.count("\n")
+        t.lexer.lineno += t.value.count('\n')
     
     def t_error(self, t):
-        print "Illegal character '%s'" % t.value[0]
+        print 'Illegal character', t.value[0]
         t.lexer.skip(1)

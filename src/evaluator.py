@@ -1,5 +1,5 @@
 import copy
-from ast import Node
+from ast import Node, GlobalSelection, Selection
 from structures import *
 import re
 
@@ -15,9 +15,47 @@ class Evaluator():
     # function = getattr(self,"visit_"+nazwa)
     # return function(ast)
     def visit(self, ast):
+        if not ast:
+            return
+        if not isinstance(ast, Node):
+            return ast
         func = getattr(self, "visit_" + ast.type)
         return func(ast)
         
+    def visit_pre_op(self, node):
+        if isinstance(node.select, GlobalSelection):
+            result = self.__globals[node.select.name]
+            if node.op == '++': 
+                result = result + 1
+                self.__globals[node.select.name] = result
+            elif node.op == '--':
+                result = result - 1
+                self.__globals[node.select.name] = result
+        elif isinstance(node.select, Selection):
+            result = self.__variables[node.select.name]
+            if node.op == '++':
+                result = result + 1 
+                self.__variables[node.select.name] = result
+            if node.op == '--':
+                result = result - 1
+                self.__variables[node.select.name] = result
+        return result
+    
+    def visit_post_op(self, node):
+        if isinstance(node.select, GlobalSelection):
+            result = self.__globals[node.select.name]
+            if node.op == '++':
+                self.__globals[node.select.name] = result + 1
+            elif node.op == '--':
+                self.__globals[node.select.name] = result - 1
+        elif isinstance(node.select, Selection):
+            result = self.__variables[node.select.name]
+            if node.op == '++':
+                self.__variables[node.select.name] = result + 1
+            if node.op == '--':
+                self.__variables[node.select.name] = result - 1
+        return result
+    
     def visit_return(self, node):
         return self.visit(node.value)
     
@@ -28,6 +66,9 @@ class Evaluator():
             else:
                 print item
         print
+        
+    def visit_break(self, node):
+        return node.type
     
     def visit_func_def(self, node):
         self.__functions.add(node.name, node.args, node.body)
@@ -132,11 +173,15 @@ class Evaluator():
     def visit_block(self, node):
         for item in node.stmts:
             result = self.visit(item)
+            if result == 'break':
+                break
         return result
     
     def visit_do_while(self, node):
         while True:
             result = self.visit(node.body)
+            if result == 'break':
+                break
             if not self.visit(node.cond):
                 break
         return result
@@ -144,6 +189,8 @@ class Evaluator():
     def visit_while(self, node):
         while ( self.visit(node.cond) ):
             result = self.visit(node.body)
+            if result == 'break':
+                break
         return result
     
     def visit_assignment(self, node):
@@ -210,6 +257,8 @@ class Evaluator():
             return self.visit(node.left) * self.visit(node.right)
         elif node.op == '/':
             return self.visit(node.left) / self.visit(node.right)
+        elif node.op == '**':
+            return self.visit(node.left) ** self.visit(node.right)
         
     def visit_unary_op(self, node):
         if node.op == '-':
@@ -232,6 +281,17 @@ class Evaluator():
             return self.visit(node.ifTrue)
         elif node.ifFalse:
             return self.visit(node.ifFalse)
+        
+    def visit_switch(self, node):
+        value = self.visit(node.select)
+        execute = False
+        for case in node.cases:
+            case_val = self.visit(case[0])
+            if case_val == value or execute or case_val == 'default':
+                execute = True
+                result = self.visit(case[1])
+                if result == 'break':
+                    break
     
     def printAst(self, ast):
         print ast.expr
