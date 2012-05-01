@@ -71,7 +71,16 @@ class Evaluator():
         return node.type
     
     def visit_func_def(self, node):
-        self.__functions.add(node.name, node.args, node.body)
+        if self.__functions.contains(node.name, node.args, node.body):
+            while True:
+                s = raw_input("Function", node.name, "already exists. Override? [y/N]: ")
+                if s == "y":
+                    self.__functions.add(node.name, node.args, node.body)
+                    break
+                if s == "N" or s == "":
+                    break
+        else:
+            self.__functions.add(node.name, node.args, node.body)
     
     def visit_return_closure(self, node):
         print node, node.value

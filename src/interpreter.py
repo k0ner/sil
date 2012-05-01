@@ -32,7 +32,7 @@ class Interpreter:
         evalek = Evaluator()
         while 1:
             try:
-                s = raw_input('calc > ')
+                s = raw_input('calc> ')
             except EOFError:
                 break
             if not s: continue

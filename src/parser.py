@@ -11,9 +11,21 @@ class Parser(Interpreter, Lexer):
     ('left', 'POW'),
     ('right', 'UMINUS'),
     )
-    
+
     tokens = Lexer.tokens
-    
+
+    def p_interpreter_type(self, p):
+        '''interpreter : type'''
+        print p[1].type + ":", p[1].value
+        
+    def p_interpreter_comparision(self, p):
+        '''interpreter : comparision'''
+        print p[1]
+
+    def p_interpreter_statemenet(self, p):
+        '''interpreter : statement'''
+        p[0] = p[1]
+
     def p_statement(self,p):
         '''statement : expression
                      | comparision
@@ -34,7 +46,7 @@ class Parser(Interpreter, Lexer):
             p[0] = Block([yacc.parse(file)])
         except Exception:
             print 'No such file', p[2]
-    
+
     def p_expression_binop(self, p):
         '''expression : expression PLUS expression
                       | expression MINUS expression
@@ -46,11 +58,11 @@ class Parser(Interpreter, Lexer):
     def p_assign_stmt(self, p):
         '''assign_stmt : NAME ASSIGN assignment'''
         p[0] = Assignment(p[1], p[3])
-            
+
     def p_global_assign_stmt(self, p):
         '''assign_stmt : GLOBAL_NAME ASSIGN assignment'''
         p[0] = GlobalAssignment(p[1], p[3])
-        
+
     def p_assignment(self, p):
         '''assignment : expression
                       | comparision
@@ -79,44 +91,31 @@ class Parser(Interpreter, Lexer):
         '''expression : select DOUBLEPLUS
                       | select DOUBLEMINUS'''
         p[0] = PostOperation(p[2], p[1])
-    
+
     def p_expression_uminus(self, p):
         'expression : MINUS expression %prec UMINUS'
         p[0] = UnaryOp(p[1], p[2])
-        
+
+    def p_expression_type(self, p):
+        '''expression : type'''
+        p[0] = p[1]
+
     def p_type_integer(self, p):
         'type : INTEGER_TYPE'
         p[0] = Integer(p[1])
-        
+
     def p_type_float(self, p):
         'type : FLOAT_TYPE'
         p[0] = Float(p[1])
-        
+
     def p_type_string(self, p):
         'type : STRING_TYPE'
         p[0] = String(p[1])
-        
+
     def p_type_boolean(self, p):
         'type : BOOLEAN_TYPE'
         p[0] = Boolean(p[1])
-        
-    #ponizsze do usuniecia
-    def p_expression_integer(self, p):
-        'expression : INTEGER_TYPE'
-        p[0] = Integer(p[1])
-        
-    def p_expression_float(self, p):
-        'expression : FLOAT_TYPE'
-        p[0] = Float(p[1])
-        
-    def p_expression_string(self, p):
-        'expression : STRING_TYPE'
-        p[0] = String(p[1])
-        
-    def p_expression_boolean(self, p):
-        'expression : BOOLEAN_TYPE'
-        p[0] = Boolean(p[1])
-        
+
     def p_if_stmt(self, p):
         '''if_stmt : IF test THEN suite
                    | IF test THEN suite ELSE suite'''
@@ -200,23 +199,24 @@ class Parser(Interpreter, Lexer):
             p[0] = FuncDef(p[2], tuple([]), p[5])
         else:
             p[0] = FuncDef(p[2], p[4], p[6])
-    
+
     def p_func_def_args(self, p):
         '''func_def_args : type_name NAME
-                         | type_name NAME COMA func_def_args'''
+                         | type_name NAME COMMA func_def_args'''
         if len(p) == 3:
-            #musimy uzyc tuples, bo listy i dicty sa unhashable, a potrzebujemy ponizsza strukture wsadzic do seta. 
+            #musimy uzyc tuples, bo listy i dicty sa unhashable, a 
+            #potrzebujemy ponizsza strukture wsadzic do seta. 
             p[0] = tuple([tuple([p[1],p[2]])])
         else:
             p[0] = tuple([tuple([p[1],p[2]])]) + p[4]
-            
+
     def p_type_name(self, p):
-            '''type_name : INTEGER_NAME
-                         | STRING_NAME
-                         | FLOAT_NAME
-                         | BOOLEAN_NAME'''
-            p[0] = p[1]
-            
+        '''type_name : INTEGER_NAME
+                     | STRING_NAME
+                     | FLOAT_NAME
+                     | BOOLEAN_NAME'''
+        p[0] = p[1]
+
     def p_test(self, p):
         '''test : LPAREN comparision RPAREN
                 | comparision'''
@@ -268,7 +268,7 @@ class Parser(Interpreter, Lexer):
         
     def p_func_call_args(self, p):
         '''func_call_args : expression
-                          | expression COMA func_call_args'''
+                          | expression COMMA func_call_args'''
         if len(p) == 2:
             p[0] = [p[1]]
         else:
