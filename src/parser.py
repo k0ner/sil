@@ -10,8 +10,6 @@ class Parser(Interpreter, Lexer):
     ('left', 'TIMES', 'DIVIDE'),
     ('left', 'POW'),
     ('right', 'UMINUS'),
-    ('right', 'DOUBLEPLUS', 'DOUBLEMINUS'),
-    ('left', 'DOUBLEPLUS', 'DOUBLEMINUS'),
     )
     
     tokens = Lexer.tokens
@@ -73,13 +71,13 @@ class Parser(Interpreter, Lexer):
         p[0] = p[2]
         
     def p_expression_pre(self, p):
-        '''expression : DOUBLEPLUS select %prec DOUBLEPLUS
-                      | DOUBLEMINUS select %prec DOUBLEMINUS'''
+        '''expression : DOUBLEPLUS select
+                      | DOUBLEMINUS select'''
         p[0] = PreOperation(p[1], p[2])
         
     def p_expression_pre_inc(self, p):
-        '''expression : select DOUBLEPLUS %prec DOUBLEPLUS
-                      | select DOUBLEMINUS %prec DOUBLEMINUS'''
+        '''expression : select DOUBLEPLUS
+                      | select DOUBLEMINUS'''
         p[0] = PostOperation(p[2], p[1])
     
     def p_expression_uminus(self, p):
@@ -240,7 +238,7 @@ class Parser(Interpreter, Lexer):
         p[0] = Return(p[2])
     
     def p_return_closure(self, p):
-        '''return_stmt : RETURN suite'''
+        '''return_stmt : RETURN func_def_stmt'''
         p[0] = ReturnClosure(p[2])
     
     def p_select_name(self, p):

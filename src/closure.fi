@@ -4,4 +4,7 @@ def returnClosure(int argument)
 		
 def multiply(int arg)
 	return def by(int x)
-		return arg * x
+		return arg * x;
+		
+add_4 = returnClosure(4);
+t = add_4(3)

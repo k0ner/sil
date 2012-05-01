@@ -74,11 +74,13 @@ class Evaluator():
         self.__functions.add(node.name, node.args, node.body)
     
     def visit_return_closure(self, node):
-        closure = node.value.stmts[0]
+        print node, node.value
+        closure = node.value
         current_variables = { }
         for k, v in self.__variables.items():
             if self.is_simple_type(v):
                 current_variables.update({k : v})
+        
         self.__closures.add(closure.name, closure.args, closure.body)
         return tuple([ self.__closures.get(closure.name), current_variables])
 
@@ -127,16 +129,16 @@ class Evaluator():
                         metric += 1.
                     elif definition[1][i][0] == 'int' and callArgs[i][0] == 'float':
                         bestFits = False
-                        metric += 0.9
+                        metric += 0.7
                     elif definition[1][i][0] == 'float' and callArgs[i][0] == 'int':
                         bestFits = False
-                        metric += 0.45
+                        metric += 0.9
                     elif definition[1][i][0] == 'bool' and callArgs[i][0] == 'int':
                         bestFits = False
                         metric += 0.8
                     elif definition[1][i][0] == 'bool' and callArgs[i][0] == 'float':
                         bestFits = False
-                        metric += 0.7
+                        metric += 0.45
                     else:
                         bestFits = False
                         break
@@ -187,6 +189,7 @@ class Evaluator():
         return result
     
     def visit_while(self, node):
+        result = None
         while ( self.visit(node.cond) ):
             result = self.visit(node.body)
             if result == 'break':
