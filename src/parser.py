@@ -2,9 +2,10 @@ from interpreter import Interpreter
 from lexer import Lexer
 from ast import *
 from ply import yacc
+from evaluator import Evaluator
 
 class Parser(Interpreter, Lexer):
-    
+
     precedence = (
     ('left', 'PLUS', 'MINUS'),
     ('left', 'TIMES', 'DIVIDE'),
@@ -20,7 +21,11 @@ class Parser(Interpreter, Lexer):
         
     def p_interpreter_comparision(self, p):
         '''interpreter : comparision'''
-        print p[1]
+        print Evaluator.visit(p[1])
+
+    def p_interpreter_select(self, p):
+        '''interpreter : select'''
+        print Evaluator.visit(p[1])
 
     def p_interpreter_statemenet(self, p):
         '''interpreter : statement'''
@@ -81,24 +86,27 @@ class Parser(Interpreter, Lexer):
     def p_expression_group(self, p):
         'expression : LPAREN expression RPAREN'
         p[0] = p[2]
-        
-    def p_expression_pre(self, p):
-        '''expression : DOUBLEPLUS select
-                      | DOUBLEMINUS select'''
+
+    def p_expression_type(self, p):
+        '''expression : type
+                      | select
+                      | preop
+                      | postop'''
+        p[0] = p[1]
+
+    def p_pre_operation(self, p):
+        '''preop : DOUBLEPLUS select
+                 | DOUBLEMINUS select'''
         p[0] = PreOperation(p[1], p[2])
         
-    def p_expression_pre_inc(self, p):
-        '''expression : select DOUBLEPLUS
-                      | select DOUBLEMINUS'''
+    def p_post_operation(self, p):
+        '''postop : select DOUBLEPLUS
+                  | select DOUBLEMINUS'''
         p[0] = PostOperation(p[2], p[1])
 
     def p_expression_uminus(self, p):
         'expression : MINUS expression %prec UMINUS'
         p[0] = UnaryOp(p[1], p[2])
-
-    def p_expression_type(self, p):
-        '''expression : type'''
-        p[0] = p[1]
 
     def p_type_integer(self, p):
         'type : INTEGER_TYPE'
@@ -116,6 +124,14 @@ class Parser(Interpreter, Lexer):
         'type : BOOLEAN_TYPE'
         p[0] = Boolean(p[1])
 
+    def p_select_name(self, p):
+        'select : NAME'
+        p[0] = Selection(p[1])
+
+    def p_global_selection(self, p):
+        '''select : GLOBAL_NAME'''
+        p[0] = GlobalSelection(p[1])
+
     def p_if_stmt(self, p):
         '''if_stmt : IF test THEN suite
                    | IF test THEN suite ELSE suite'''
@@ -123,7 +139,7 @@ class Parser(Interpreter, Lexer):
             p[0] = IfThenElse(p[2], p[4], None)
         else:
             p[0] = IfThenElse(p[2], p[4], p[6])
-        
+
     def p_suite(self, p):
         '''suite : simple_stmt
                  | BEGIN stmts END'''
@@ -131,13 +147,13 @@ class Parser(Interpreter, Lexer):
             p[0] = Block(p[1])
         else:
             p[0] = Block(p[2])
-            
+
     #should refers all statements but used in a single line
     def p_simple_stmt(self, p):
         #currently only for test issues
         '''simple_stmt : stmt'''
         p[0] = [p[1]]
-            
+
     def p_stmts(self, p):
         '''stmts : stmt
                  | stmt SEMICOLON stmts'''
@@ -145,7 +161,7 @@ class Parser(Interpreter, Lexer):
             p[0] = [p[1]]
         else:
             p[0] = [p[1]] + p[3]
-            
+
     def p_stmt(self, p):
         #for test too
         '''stmt : compound_stmt
@@ -155,7 +171,7 @@ class Parser(Interpreter, Lexer):
                 | break_stmt
                 | expression'''
         p[0] = p[1]
-    
+
     def p_compound_stmt(self, p):
         '''compound_stmt : if_stmt
                          | while_stmt
@@ -224,11 +240,11 @@ class Parser(Interpreter, Lexer):
             p[0] = p[2]
         else:
             p[0] = p[1]
-            
+
     def p_break_stmt(self, p):
         '''break_stmt : BREAK'''
         p[0] = Break()
-        
+
     def p_return_none(self, p):
         '''return_stmt : RETURN'''
         p[0] = Return()
@@ -236,27 +252,10 @@ class Parser(Interpreter, Lexer):
     def p_return_stmt(self, p):
         '''return_stmt : RETURN expression'''
         p[0] = Return(p[2])
-    
+
     def p_return_closure(self, p):
         '''return_stmt : RETURN func_def_stmt'''
         p[0] = ReturnClosure(p[2])
-    
-    def p_select_name(self, p):
-        'select : NAME'
-        p[0] = Selection(p[1])
-    
-    #to trzeba usunac
-    def p_expression_name(self, p):
-        'expression : NAME'
-        p[0] = Selection(p[1])
-
-    def p_global_selection(self, p):
-        '''select : GLOBAL_NAME'''
-        p[0] = GlobalSelection(p[1])
-        
-    def p_global_selection2(self, p):
-        '''expression : GLOBAL_NAME'''
-        p[0] = GlobalSelection(p[1])
 
     def p_func_call(self, p):
         '''func_call_stmt : NAME LPAREN RPAREN
@@ -265,7 +264,7 @@ class Parser(Interpreter, Lexer):
             p[0] = FuncCall(p[1], [])
         else:
             p[0] = FuncCall(p[1], p[3])
-        
+
     def p_func_call_args(self, p):
         '''func_call_args : expression
                           | expression COMMA func_call_args'''
@@ -273,7 +272,7 @@ class Parser(Interpreter, Lexer):
             p[0] = [p[1]]
         else:
             p[0] = [p[1]] + p[3]
-        
+
     def p_error(self, p):
         print 'Syntax error at %s' % p.value
 

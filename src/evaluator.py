@@ -5,110 +5,134 @@ import re
 
 class Evaluator():
 
-    def __init__(self):
-        self.__variables = { }
-        self.__globals = None
-        self.__closures = Map()
-        self.__functions = Map()
-    
+    __variables = { }
+    __globals = None
+    __closures = Map()
+    __functions = Map()
+    __fake = False
+
     #przerobic na postac nastepujaca:
     # function = getattr(self,"visit_"+nazwa)
     # return function(ast)
-    def visit(self, ast):
+    @staticmethod
+    def visit(ast):
         if not ast:
             return
         if not isinstance(ast, Node):
             return ast
-        func = getattr(self, "visit_" + ast.type)
+        func = getattr(Evaluator(), "visit_" + ast.type)
         return func(ast)
-        
+
     def visit_pre_op(self, node):
         if isinstance(node.select, GlobalSelection):
-            result = self.__globals[node.select.name]
+            result = Evaluator.__globals[node.select.name]
             if node.op == '++': 
                 result = result + 1
-                self.__globals[node.select.name] = result
+                Evaluator.__globals[node.select.name] = result
             elif node.op == '--':
                 result = result - 1
-                self.__globals[node.select.name] = result
+                Evaluator.__globals[node.select.name] = result
         elif isinstance(node.select, Selection):
-            result = self.__variables[node.select.name]
+            result = Evaluator.__variables[node.select.name]
             if node.op == '++':
                 result = result + 1 
-                self.__variables[node.select.name] = result
+                Evaluator.__variables[node.select.name] = result
             if node.op == '--':
                 result = result - 1
-                self.__variables[node.select.name] = result
+                Evaluator.__variables[node.select.name] = result
         return result
-    
+
     def visit_post_op(self, node):
         if isinstance(node.select, GlobalSelection):
-            result = self.__globals[node.select.name]
+            result = Evaluator.__globals[node.select.name]
             if node.op == '++':
-                self.__globals[node.select.name] = result + 1
+                Evaluator.__globals[node.select.name] = result + 1
             elif node.op == '--':
-                self.__globals[node.select.name] = result - 1
+                Evaluator.__globals[node.select.name] = result - 1
         elif isinstance(node.select, Selection):
-            result = self.__variables[node.select.name]
+            result = Evaluator.__variables[node.select.name]
             if node.op == '++':
-                self.__variables[node.select.name] = result + 1
+                Evaluator.__variables[node.select.name] = result + 1
             if node.op == '--':
-                self.__variables[node.select.name] = result - 1
+                Evaluator.__variables[node.select.name] = result - 1
         return result
-    
+
     def visit_return(self, node):
         return self.visit(node.value)
-    
+
     def visit_print(self, node):
         for item in node.args:
             if isinstance(item, Node):
-                print self.visit(item),
+                result = self.visit(item)
+                if not Evaluator.__fake:
+                    print result,
             else:
-                print item
-        print
-        
+                if not Evaluator.__fake:
+                    print item
+        if not Evaluator.__fake:
+            print
+
     def visit_break(self, node):
         return node.type
-    
+
     def visit_func_def(self, node):
-        if self.__functions.contains(node.name, node.args, node.body):
+        #uzyte w print
+        Evaluator.__fake = True
+        tmpVariables = copy.deepcopy(Evaluator.__variables)
+        tmpClosures = copy.deepcopy(Evaluator.__closures)
+        tmpFunctions = copy.deepcopy(Evaluator.__functions)
+        Evaluator.__functions.add(node.name, node.args, node.body)
+        
+        for arg in node.args:
+            Evaluator.__variables[arg[1]] = Evaluator.assign_with_cast(arg[0], 0)
+        
+        Evaluator.visit(node.body)
+        
+        ''' Powyzej bedzie sprawdzenie czy wszystko jest okej z funkcja tzn. z jej cialem'''
+        
+        Evaluator.__variables = copy.deepcopy(tmpVariables)
+        Evaluator.__closures = copy.deepcopy(tmpClosures)
+        Evaluator.__functions = copy.deepcopy(tmpFunctions)
+        Evaluator.__fake = False
+        
+        if Evaluator.__functions.contains(node.name, node.args, node.body)[0]:
             while True:
-                s = raw_input("Function", node.name, "already exists. Override? [y/N]: ")
+                s = raw_input("Function " + node.name + " with applied arguments already exists. Override? [y/N]: ")
                 if s == "y":
-                    self.__functions.add(node.name, node.args, node.body)
+                    Evaluator.__functions.add(node.name, node.args, node.body)
                     break
-                if s == "N" or s == "":
+                if s == "N" or s == "n" or s == "":
                     break
         else:
-            self.__functions.add(node.name, node.args, node.body)
-    
+            Evaluator.__functions.add(node.name, node.args, node.body)
+
     def visit_return_closure(self, node):
         print node, node.value
         closure = node.value
         current_variables = { }
-        for k, v in self.__variables.items():
+        for k, v in Evaluator.__variables.items():
             if self.is_simple_type(v):
                 current_variables.update({k : v})
         
-        self.__closures.add(closure.name, closure.args, closure.body)
-        return tuple([ self.__closures.get(closure.name), current_variables])
+        Evaluator.__closures.add(closure.name, closure.args, closure.body)
+        return tuple([ Evaluator.__closures.get(closure.name), current_variables])
 
     def visit_func_call(self, node):
         #dostajemy wszystkie definicje funkcji zwiazanych z dana nazwa, pozniej musimy sprawdzic zmienne czy sa odpowiedniego typu
-        defList = self.__functions.get(node.name)
+        defList = Evaluator.__functions.get(node.name)
         is_closure = False
         
         if defList == []:
             try:
-                defList = self.__variables[node.name]
+                defList = Evaluator.__variables[node.name]
                 is_closure = True
             except Exception:
                 print "Function", node.name, "not found."
                 return
 
         #kopiujemy srodowiska
-        if not self.__globals:
-            self.__globals = copy.deepcopy(self.__variables)
+        if not Evaluator.__globals:
+            Evaluator.__globals = copy.deepcopy(Evaluator.__variables)
             
         if is_closure:
             """trzeba uwazac, bo tutaj wszystko dziala jako przekazywanie przez wartosc, a nie przez referencje,
@@ -117,12 +141,12 @@ class Evaluator():
             wyswietlona zostanie wartosc x+1
             jesli dalej damy z = 3 i znowu wywolamy print add_z(x) to dalej bedzie sie wyswietlalo
             x+1, a nie jak moznaby przypuszczac x+3, poniewaz w fcji returnClosure(z) zostala uzyta wartosc tej zmiennej, a nie referencja"""
-            tmpVariables = copy.deepcopy(self.__variables)
-            self.__variables.update(defList[1])
+            tmpVariables = copy.deepcopy(Evaluator.__variables)
+            Evaluator.__variables.update(defList[1])
             defList = defList[0]
         else:
-            tmpVariables = copy.deepcopy(self.__variables)
-        tmpFunctions = copy.deepcopy(self.__functions)
+            tmpVariables = copy.deepcopy(Evaluator.__variables)
+        tmpFunctions = copy.deepcopy(Evaluator.__functions)
         
         callArgs = [tuple([re.search('(?<=\')\w+', str(type(self.visit(arg)))).group(0), self.visit(arg)]) for arg in node.args]
         possibleToUse = []
@@ -169,25 +193,25 @@ class Evaluator():
         
         i = 0
         while i < len(definition[1]):
-            self.__variables[definition[1][i][1]] = self.assign_with_cast(definition[1][i][0], callArgs[i][1])
+            Evaluator.__variables[definition[1][i][1]] = Evaluator.assign_with_cast(definition[1][i][0], callArgs[i][1])
             i += 1
             
         result = self.visit(definition[2])
-        self.__functions = copy.deepcopy(tmpFunctions)
-        if self.__globals:
-            self.__variables = copy.deepcopy(self.__globals)
-            self.__globals = None
+        Evaluator.__functions = copy.deepcopy(tmpFunctions)
+        if Evaluator.__globals:
+            Evaluator.__variables = copy.deepcopy(Evaluator.__globals)
+            Evaluator.__globals = None
         else:
-            self.__variables = copy.deepcopy(tmpVariables)
+            Evaluator.__variables = copy.deepcopy(tmpVariables)
         return result
-    
+
     def visit_block(self, node):
         for item in node.stmts:
             result = self.visit(item)
             if result == 'break':
                 break
         return result
-    
+
     def visit_do_while(self, node):
         while True:
             result = self.visit(node.body)
@@ -196,7 +220,7 @@ class Evaluator():
             if not self.visit(node.cond):
                 break
         return result
-    
+
     def visit_while(self, node):
         result = None
         while ( self.visit(node.cond) ):
@@ -204,20 +228,20 @@ class Evaluator():
             if result == 'break':
                 break
         return result
-    
+
     def visit_assignment(self, node):
         result = self.visit(node.value)
-        self.__variables[node.name] = result
-        print self.__variables
+        Evaluator.__variables[node.name] = result
+        print Evaluator.__variables
         return result
-    
+
     def visit_global_assignment(self, node):
         result = self.visit(node.value)
         try:
             #ponizsza instrukcja jest tylko po to zeby rzucilo wyjatek jesli nie ma takiej zmiennej globalnej
-            self.__globals[node.name]
-            self.__globals[node.name] = result
-            self.__variables[node.name] = result
+            Evaluator.__globals[node.name]
+            Evaluator.__globals[node.name] = result
+            Evaluator.__variables[node.name] = result
         except KeyError:
             #nie mozemy stworzyc nowej zmiennej
             print "Variable", node.name, "does not exist in global context. Cannot create global variable from a local context."
@@ -226,26 +250,26 @@ class Evaluator():
             print "global prefix used in incorrect context"
             result = None
         return result
-    
+
     def visit_global_selection(self, node):
         try:
-            result = self.__globals[node.name]
+            result = Evaluator.__globals[node.name]
         except KeyError:
             print "Variable", node.name, "does not exist in global context."
             result = None
         return result
-    
+
     def visit_selection(self, node):
-        return self.__variables[node.name]
+        return Evaluator.__variables[node.name]
         #=======================================================================
-        # result = self.__variables[node.name]
+        # result = Evaluator.__variables[node.name]
         # if self.toReturn:
         #    print "byla funckja :-)"
-        #    self.__variables = copy.deepcopy(self.tmpNames)
+        #    Evaluator.__variables = copy.deepcopy(self.tmpNames)
         #    self.tmpNames = None
         # return result
         #=======================================================================
-    
+
     def visit_comparision(self, node):
         if node.op == '==':
             return self.visit(node.left) == self.visit(node.right)
@@ -259,7 +283,7 @@ class Evaluator():
             return self.visit(node.left) >= self.visit(node.right)
         elif node.op == '<=':
             return self.visit(node.left) <= self.visit(node.right)
-        
+
     def visit_binary_op(self, node):
         if node.op == '+':
             return self.visit(node.left) + self.visit(node.right)
@@ -271,7 +295,7 @@ class Evaluator():
             return self.visit(node.left) / self.visit(node.right)
         elif node.op == '**':
             return self.visit(node.left) ** self.visit(node.right)
-        
+
     def visit_unary_op(self, node):
         if node.op == '-':
             return -(self.visit(node.expr))
@@ -284,16 +308,16 @@ class Evaluator():
 
     def visit_int(self, node):
         return node.value
-    
+
     def visit_bool(self, node):
         return node.value
-    
+
     def visit_if_then_else(self, node):
         if self.visit(node.cond):
             return self.visit(node.ifTrue)
         elif node.ifFalse:
             return self.visit(node.ifFalse)
-        
+
     def visit_switch(self, node):
         value = self.visit(node.select)
         execute = False
@@ -307,13 +331,15 @@ class Evaluator():
     
     def printAst(self, ast):
         print ast.expr
-        
+
+    @staticmethod
     def is_simple_type(self, value):
         if isinstance(value, int) or isinstance(value, str) or isinstance(value, float) or isinstance(value, bool):
             return True
         return False
         
-    def assign_with_cast(self, castTo, value):
+    @staticmethod
+    def assign_with_cast(castTo, value):
         if castTo == 'int':
             return int(value)
         if castTo == 'float':

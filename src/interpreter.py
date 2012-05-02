@@ -29,14 +29,13 @@ class Interpreter:
                   tabmodule=self.tabmodule)
 
     def run(self):
-        evalek = Evaluator()
         while 1:
             try:
                 s = raw_input('calc> ')
             except EOFError:
                 break
             if not s: continue
-            evalek.visit(yacc.parse(s))
+            Evaluator.visit(yacc.parse(s))
             
 if __name__ == '__main__':
     print "elo"

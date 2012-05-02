@@ -3,6 +3,12 @@ class Map:
         self.container = set()
         
     def add(self, name, args, body):
+        result = self.contains(name, args, body)
+        if result[0]:
+            self.container.remove(result[1])
+        self.container.add(tuple([name, args, body]))
+        
+    def contains(self, name, args, body):
         exists = False
         for item in self.container:
             #tutaj trzeba poprawic, bo nie wykryje roznicy pomiedzy bool x i bool y
@@ -17,15 +23,9 @@ class Map:
                     if i == len(args):
                         exists = True
             if exists:
-                self.remove()
-        self.container.add(tuple([name, args, body]))
-        
-    def contains(self, name, args, body):
-        for item in self.container:
-            #tutaj trzeba poprawic, bo nie wykryje roznicy pomiedzy bool x i bool y
-            if name == item[0] and args == item[1]:
-                return True
-        return False
+                return (True, item)
+                break
+        return (False, None)
     
     def get(self, name):
         result = [ ]
