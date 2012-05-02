@@ -1,0 +1,5 @@
+x = 1;
+def f(int x) begin print x; print _x; _x = x end;
+def f(bool x) print "bool";
+
+def f(int x, int y) print "int int"

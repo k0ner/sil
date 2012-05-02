@@ -17,14 +17,14 @@ class Parser(Interpreter, Lexer):
 
     def p_interpreter_type(self, p):
         '''interpreter : type'''
-        print p[1].type + ":", p[1].value
+        print p[1].type + ":", Evaluator.visit(p[1])
         
-    def p_interpreter_comparision(self, p):
-        '''interpreter : comparision'''
-        print Evaluator.visit(p[1])
-
-    def p_interpreter_select(self, p):
-        '''interpreter : select'''
+    def p_interpreter_other(self, p):
+        '''interpreter : comparision
+                       | select
+                       | array_selection
+                       | func_call_stmt
+                       | expression'''
         print Evaluator.visit(p[1])
 
     def p_interpreter_statemenet(self, p):
@@ -52,12 +52,17 @@ class Parser(Interpreter, Lexer):
         except Exception:
             print 'No such file', p[2]
 
+    def p_returning_value(self, p):
+        '''returning_value : expression
+                           | func_call_stmt'''
+        p[0] = p[1]
+
     def p_expression_binop(self, p):
-        '''expression : expression PLUS expression
-                      | expression MINUS expression
-                      | expression TIMES expression
-                      | expression DIVIDE expression
-                      | expression POW expression'''
+        '''expression : returning_value PLUS returning_value
+                      | returning_value MINUS returning_value
+                      | returning_value TIMES returning_value
+                      | returning_value DIVIDE returning_value
+                      | returning_value POW returning_value'''
         p[0] = BinaryOp(p[2], p[1], p[3])
 
     def p_assign_stmt(self, p):
@@ -75,12 +80,12 @@ class Parser(Interpreter, Lexer):
         p[0] = p[1]
 
     def p_relexpr(self, p):
-        '''comparision : expression EQ expression
-                       | expression NE expression
-                       | expression GT expression
-                       | expression LT expression
-                       | expression GE expression
-                       | expression LE expression'''
+        '''comparision : returning_value EQ returning_value
+                       | returning_value NE returning_value
+                       | returning_value GT returning_value
+                       | returning_value LT returning_value
+                       | returning_value GE returning_value
+                       | returning_value LE returning_value'''
         p[0] = Comparision(p[2], p[1], p[3])
 
     def p_expression_group(self, p):
@@ -91,8 +96,35 @@ class Parser(Interpreter, Lexer):
         '''expression : type
                       | select
                       | preop
-                      | postop'''
+                      | postop
+                      | array_selection'''
         p[0] = p[1]
+
+    def p_array_selection(self, p):
+        '''array_selection : select array_get
+                           | func_call_stmt array_get'''
+        p[0] = ArraySelection(p[1], p[2])
+
+    def p_array_get_expr(self, p):
+        'array_get : LBRACKET expression RBRACKET'
+        print 'tutaj'
+        p[0] = [p[2]]
+
+    def p_array_get_expr_col_expr(self, p):
+        'array_get : LBRACKET expression COLON expression RBRACKET'
+        p[0] = [p[2], p[4]]
+
+    def p_array_get_col(self, p):
+        'array_get : LBRACKET COLON RBRACKET'
+        p[0] = [None, None]
+
+    def p_array_col_expr(self, p):
+        'array_get : LBRACKET COLON expression RBRACKET'
+        p[0] = [None, p[3]]
+
+    def p_array_expr_col(self, p):
+        'array_get : LBRACKET expression COLON RBRACKET'
+        p[0] = [p[2], None]
 
     def p_pre_operation(self, p):
         '''preop : DOUBLEPLUS select
@@ -123,6 +155,22 @@ class Parser(Interpreter, Lexer):
     def p_type_boolean(self, p):
         'type : BOOLEAN_TYPE'
         p[0] = Boolean(p[1])
+        
+    def p_type_array(self, p):
+        '''type : LBRACKET RBRACKET
+                | LBRACKET array_elements RBRACKET'''
+        if len(p) == 3:
+            p[0] = Array()
+        else:
+            p[0] = Array(p[2])
+        
+    def p_array_elements(self, p):
+        '''array_elements : expression
+                          | expression COMMA array_elements'''
+        if len(p) == 2:
+            p[0] = [p[1]]
+        else:
+            p[0] = [p[1]] + p[3]
 
     def p_select_name(self, p):
         'select : NAME'
@@ -250,7 +298,9 @@ class Parser(Interpreter, Lexer):
         p[0] = Return()
 
     def p_return_stmt(self, p):
-        '''return_stmt : RETURN expression'''
+        '''return_stmt : RETURN expression
+                       | RETURN comparision
+                       | RETURN func_call_stmt'''
         p[0] = Return(p[2])
 
     def p_return_closure(self, p):

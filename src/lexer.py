@@ -28,8 +28,8 @@ class Lexer(Interpreter):
     tokens = [
         'NAME', 'GLOBAL_NAME', 'INTEGER_TYPE', 'FLOAT_TYPE', 'STRING_TYPE', 'BOOLEAN_TYPE',
         'PLUS', 'MINUS', 'POW', 'TIMES', 'DIVIDE', 'ASSIGN', 'DOUBLEPLUS', 'DOUBLEMINUS',
-        'LPAREN', 'RPAREN', 'NEWLINE', 'COLON', 'SEMICOLON', 'COMMA', 'FILENAME'
-        ] + list(reserved.values()) + relops
+        'LPAREN', 'RPAREN', 'LBRACKET', 'RBRACKET', 'NEWLINE', 'COLON', 'SEMICOLON', 'COMMA',
+        'FILENAME'] + list(reserved.values()) + relops
     
     t_EQ = r'=='
     t_NE = r'!='
@@ -48,6 +48,8 @@ class Lexer(Interpreter):
     t_DOUBLEMINUS = r'--'
     t_LPAREN = r'\('
     t_RPAREN = r'\)'
+    t_LBRACKET = r'\['
+    t_RBRACKET = r'\]'
     t_COLON = r':'
     t_SEMICOLON = r';'
     t_COMMA = r','

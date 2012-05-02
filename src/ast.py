@@ -154,3 +154,16 @@ class PostOperation(Node):
         self.type = 'post_op'
         self.op = op
         self.select = select
+        
+class Array(Node):
+    def __init__(self, value=None, coord=None):
+        self.type = 'array'
+        self.value = value
+        self.coord = coord
+        
+class ArraySelection(Node):
+    def __init__(self, name, value, coord=None):
+        self.type = 'array_selection'
+        self.name = name
+        self.value = value
+        self.coord = coord
