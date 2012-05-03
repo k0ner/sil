@@ -107,7 +107,6 @@ class Parser(Interpreter, Lexer):
 
     def p_array_get_expr(self, p):
         'array_get : LBRACKET expression RBRACKET'
-        print 'tutaj'
         p[0] = [p[2]]
 
     def p_array_get_expr_col_expr(self, p):
@@ -316,12 +315,17 @@ class Parser(Interpreter, Lexer):
             p[0] = FuncCall(p[1], p[3])
 
     def p_func_call_args(self, p):
-        '''func_call_args : expression
-                          | expression COMMA func_call_args'''
+        '''func_call_args : arg
+                          | arg COMMA func_call_args'''
         if len(p) == 2:
             p[0] = [p[1]]
         else:
             p[0] = [p[1]] + p[3]
+
+    def p_func_call_args_arg(self, p):
+        '''arg : expression
+               | func_call_stmt'''
+        p[0] = p[1]
 
     def p_error(self, p):
         print 'Syntax error at %s' % p.value
