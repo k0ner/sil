@@ -83,6 +83,9 @@ class Evaluator():
         tmpClosures = copy.deepcopy(Evaluator.closures)
         tmpFunctions = copy.deepcopy(Evaluator.functions)
         
+        if not Evaluator.global_variables:
+            Evaluator.global_variables = copy.deepcopy(Evaluator.variables)
+        
         Evaluator.functions.add(node.name, node.args, node.body)
         for arg in node.args:
             Evaluator.variables[arg[1]] = Evaluator.assign_with_cast(arg[0], 0)
