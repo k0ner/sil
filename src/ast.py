@@ -143,6 +143,10 @@ class Break(Node):
     def __init__(self, coord=None):
         self.type = 'break'
         
+class Continue(Node):
+    def __init__(self, coord=None):
+        self.type = 'continue'
+        
 class PreOperation(Node):
     def __init__(self, op, select, coord=None):
         self.type = 'pre_op'

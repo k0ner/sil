@@ -21,13 +21,16 @@ class Lexer(Interpreter):
                 'switch' : 'SWITCH',
                 'case' : 'CASE',
                 'break' : 'BREAK',
+                'continue' : 'CONTINUE',
                 'default' : 'DEFAULT'}
     
     relops = [ 'EQ', 'NE', 'GT', 'LT', 'GE', 'LE' ]
     
     tokens = [
         'NAME', 'GLOBAL_NAME', 'INTEGER_TYPE', 'FLOAT_TYPE', 'STRING_TYPE', 'BOOLEAN_TYPE',
-        'PLUS', 'MINUS', 'POW', 'TIMES', 'DIVIDE', 'ASSIGN', 'DOUBLEPLUS', 'DOUBLEMINUS',
+        'PLUS', 'MINUS', 'POW', 'TIMES', 'DIVIDE',
+        'PLUS_ASSIGN', 'MINUS_ASSIGN', 'POW_ASSIGN', 'TIMES_ASSIGN', 'DIVIDE_ASSIGN',
+        'ASSIGN', 'DOUBLEPLUS', 'DOUBLEMINUS',
         'LPAREN', 'RPAREN', 'LBRACKET', 'RBRACKET', 'NEWLINE', 'COLON', 'SEMICOLON', 'COMMA',
         'FILENAME'] + list(reserved.values()) + relops
     
@@ -43,6 +46,13 @@ class Lexer(Interpreter):
     t_POW = r'\*\*'
     t_TIMES = r'\*'
     t_DIVIDE = r'/'
+    
+    t_PLUS_ASSIGN = r'\+='
+    t_MINUS_ASSIGN = r'-='
+    t_POW_ASSIGN = r'\*\*='
+    t_TIMES_ASSIGN = r'\*='
+    t_DIVIDE_ASSIGN = r'/='
+    
     t_ASSIGN = r'='
     t_DOUBLEPLUS = r'\+\+'
     t_DOUBLEMINUS = r'--'

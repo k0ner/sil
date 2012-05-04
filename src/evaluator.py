@@ -75,6 +75,9 @@ class Evaluator():
     def visit_break(self, node):
         return node.type
 
+    def visit_continue(self, node):
+        return node.type
+
     def visit_func_def(self, node):
         
         Evaluator.fake = True
@@ -230,7 +233,7 @@ class Evaluator():
     def visit_block(self, node):
         for item in node.stmts:
             result = self.visit(item)
-            if result == 'break':
+            if result == 'break' or result == 'continue':
                 break
         return result
 
@@ -239,6 +242,8 @@ class Evaluator():
             result = self.visit(node.body)
             if result == 'break':
                 break
+            if result == 'continue':
+                continue
             if not self.visit(node.cond):
                 break
         return result
@@ -249,6 +254,8 @@ class Evaluator():
             result = self.visit(node.body)
             if result == 'break':
                 break
+            if result == 'continue':
+                continue
         return result
 
     def visit_assignment(self, node):

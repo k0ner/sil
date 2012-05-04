@@ -6,7 +6,6 @@ end while x < 5;
 
 while x < 10
 begin
-	print x;
-	if x == 8 then break;
+	if x == 8 then begin ++x; continue end else print x;
 	++x
 end

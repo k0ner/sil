@@ -65,6 +65,23 @@ class Parser(Interpreter, Lexer):
                       | returning_value POW returning_value'''
         p[0] = BinaryOp(p[2], p[1], p[3])
 
+    def p_operation_with_assignment(self, p):
+        '''assign_stmt : NAME PLUS_ASSIGN returning_value
+                       | NAME MINUS_ASSIGN returning_value
+                       | NAME TIMES_ASSIGN returning_value
+                       | NAME DIVIDE_ASSIGN returning_value
+                       | NAME POW_ASSIGN returning_value'''
+        if p[2] == '+=':
+            p[0] = Assignment(p[1], BinaryOp('+', Selection(p[1]), p[3]))
+        if p[2] == '-=':
+            p[0] = Assignment(p[1], BinaryOp('-', Selection(p[1]), p[3]))
+        if p[2] == '*=':
+            p[0] = Assignment(p[1], BinaryOp('*', Selection(p[1]), p[3]))
+        if p[2] == '/=':
+            p[0] = Assignment(p[1], BinaryOp('/', Selection(p[1]), p[3]))
+        if p[2] == '**=':
+            p[0] = Assignment(p[1], BinaryOp('**', Selection(p[1]), p[3]))
+
     def p_assign_stmt(self, p):
         '''assign_stmt : NAME ASSIGN assignment'''
         p[0] = Assignment(p[1], p[3])
@@ -216,6 +233,7 @@ class Parser(Interpreter, Lexer):
                 | print_stmt
                 | return_stmt
                 | break_stmt
+                | continue_stmt
                 | expression'''
         p[0] = p[1]
 
@@ -289,8 +307,12 @@ class Parser(Interpreter, Lexer):
             p[0] = p[1]
 
     def p_break_stmt(self, p):
-        '''break_stmt : BREAK'''
+        'break_stmt : BREAK'
         p[0] = Break()
+
+    def p_continue_stmt(self, p):
+        'continue_stmt : CONTINUE'
+        p[0] = Continue()
 
     def p_return_none(self, p):
         '''return_stmt : RETURN'''
