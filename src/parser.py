@@ -350,7 +350,7 @@ class Parser(Interpreter, Lexer):
         p[0] = p[1]
 
     def p_error(self, p):
-        print 'Syntax error at %s' % p.value
+        print 'Syntax error at'
 
 if __name__ == '__main__':
     calc = Parser()

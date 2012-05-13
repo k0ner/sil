@@ -11,9 +11,6 @@ class Evaluator():
     functions = Map()
     fake = False
 
-    #przerobic na postac nastepujaca:
-    # function = getattr(self,"visit_"+nazwa)
-    # return function(ast)
     @staticmethod
     def visit(ast):
         if not ast:
