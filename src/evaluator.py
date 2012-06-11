@@ -10,6 +10,7 @@ class Evaluator():
     closures = Map()
     functions = Map()
     fake = False
+    inFunction = False
 
     @staticmethod
     def visit(ast):
@@ -55,7 +56,10 @@ class Evaluator():
         return result
 
     def visit_return(self, node):
-        return self.visit(node.value)
+        if Evaluator.inFunction:
+            return ('return', self.visit(node.value))
+        else:
+            return self.visit(node.value)
 
     def visit_print(self, node):
         for item in node.args:
@@ -138,6 +142,7 @@ class Evaluator():
 
     def visit_func_call(self, node):
         #dostajemy wszystkie definicje funkcji zwiazanych z dana nazwa, pozniej musimy sprawdzic zmienne czy sa odpowiedniego typu
+        Evaluator.inFunction = True
         defList = Evaluator.functions.get(node.name)
         Evaluator.is_closure = False
         
@@ -225,6 +230,8 @@ class Evaluator():
             Evaluator.global_variables = None
         else:
             Evaluator.variables = copy.deepcopy(tmpVariables)
+            
+        Evaluator.inFunction = False
         return result
 
     def visit_block(self, node):
@@ -232,6 +239,8 @@ class Evaluator():
             result = self.visit(item)
             if result == 'break' or result == 'continue':
                 break
+            if isinstance(result, tuple):
+                return result[1]
         return result
 
     def visit_do_while(self, node):
@@ -258,7 +267,6 @@ class Evaluator():
     def visit_assignment(self, node):
         result = self.visit(node.value)
         Evaluator.variables[node.name] = result
-        print Evaluator.variables
         return result
 
     def visit_global_assignment(self, node):
