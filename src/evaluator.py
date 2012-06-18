@@ -92,7 +92,7 @@ class Evaluator():
         
         Evaluator.functions.add(node.name, node.args, node.body)
         for arg in node.args:
-            Evaluator.variables[arg[1]] = Evaluator.assign_with_cast(arg[0], 0)
+            Evaluator.variables[arg[1]] = Evaluator.assign_with_cast(arg[0], 100000)
         Evaluator.visit(node.body)
         
         Evaluator.functions = copy.deepcopy(tmpFunctions)
@@ -170,6 +170,7 @@ class Evaluator():
             defList = defList[0]
         else:
             tmpVariables = copy.deepcopy(Evaluator.variables)
+        print tmpVariables
         tmpFunctions = copy.deepcopy(Evaluator.functions)
         
         callArgs = [tuple([re.search('(?<=\')\w+', str(type(self.visit(arg)))).group(0), self.visit(arg)]) for arg in node.args]
@@ -222,12 +223,15 @@ class Evaluator():
             
         if not Evaluator.fake:
             result = self.visit(definition[2])
+            if isinstance(result, tuple):
+                return result[1]
         else:
             result = 0
         Evaluator.functions = copy.deepcopy(tmpFunctions)
         if Evaluator.global_variables:
             Evaluator.variables = copy.deepcopy(Evaluator.global_variables)
             Evaluator.global_variables = None
+            Evaluator.variables.update(tmpVariables)
         else:
             Evaluator.variables = copy.deepcopy(tmpVariables)
             
@@ -240,7 +244,7 @@ class Evaluator():
             if result == 'break' or result == 'continue':
                 break
             if isinstance(result, tuple):
-                return result[1]
+                return result
         return result
 
     def visit_do_while(self, node):
@@ -267,6 +271,7 @@ class Evaluator():
     def visit_assignment(self, node):
         result = self.visit(node.value)
         Evaluator.variables[node.name] = result
+        print Evaluator.variables
         return result
 
     def visit_global_assignment(self, node):

@@ -1,6 +1,31 @@
 def f(int x) begin
-	print "11";
-	return 2;
-	print "22";
-	return 3
+	if x == 0 then
+		return 0;
+	if x == 1 then
+		return 1;
+	if x == 2 then
+		return 1;
+	return f(x-1)+f(x-2)
+end;
+
+def g(int a, float b, float c) begin
+ if a < 0 then begin
+  print "if";
+  print "again";
+  d = -b / (2 * a);
+  print d;
+  return -b/2*a
+  end;
+ return 1000
+end;
+
+def i(float a, float b, float c) begin
+ if a == 0.0 then begin
+  print "if";
+  print "again";
+  d = -b / (2 * a);
+  print d;
+  return -b/2*a
+  end;
+ return 1000
 end
