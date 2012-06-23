@@ -224,7 +224,7 @@ class Evaluator():
         if not Evaluator.fake:
             result = self.visit(definition[2])
             if isinstance(result, tuple):
-                return result[1]
+                result = result[1]
         else:
             result = 0
         Evaluator.functions = copy.deepcopy(tmpFunctions)
